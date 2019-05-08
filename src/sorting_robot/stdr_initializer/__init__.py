@@ -1,0 +1,1 @@
+from generate_spawn_locations import generateSpawnLocations
