@@ -174,6 +174,7 @@ install(PROGRAMS
   nodes/heatmap
   nodes/visualize_heatmap
   nodes/path_planner
+  tests/test_path_service
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

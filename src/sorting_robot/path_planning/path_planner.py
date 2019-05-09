@@ -4,40 +4,39 @@ import numpy as np
 import matplotlib.pyplot as plt
 import rospy
 from sorting_robot.msg import Pose, Cell
-from sorting_robot.srv import Path, PathToBin
+from sorting_robot.srv import *
 
 HOME_DIR = os.environ['HOME']
 ANNOTATED_GRAPH_IMAGE_FILE_SAVE_LOCATION = HOME_DIR + '/catkin_ws/src/sorting_robot/data/annotated_graph.svg'
 GRAPH_PICKLED_FILE_LOCATION = HOME_DIR + '/catkin_ws/src/sorting_robot/data/graph.gpickle'
 
 
+def handlePathToBinRequest(req):
+    pass
+
+
+def handlePathRequest(req):
+    source = req.source
+    destination = req.destination
+    nodes = pathPlanner.astar((source.row, source.col, source.direction), (destination.row, destination.col, destination.direction))
+    nodes = [Pose(*node) for node in nodes]
+    return PathResponse(path=nodes)
+
+
 class PathPlanner:
     def __init__(self, G):
         self.G = G
         rospy.init_node('path_planning_server')
-        pathService = rospy.Service('/path', Path, self.handlePathRequest)
-        pathToBinService = rospy.Service('/path_to_bin', PathToBin, self.handlePathToBinRequest)
-
-    def handlePathRequest(req):
-        source = req.source
-        destination = req.destination
-        nodes = self.astar(source, destination)
-        return PathResponse(path=nodes)
-
-    def handlePathToBinRequest(req):
-        source = req.source
-        binPosition = req.bin_position
-        nodes = self.astar(source, binPosition)
-        return PathResponse(path=nodes)
+        pathService = rospy.Service('path', Path, handlePathRequest)
+        pathToBinService = rospy.Service('path_to_bin', PathToBin, handlePathToBinRequest)
 
     def heuristic(self, currentNode, targetNode):
         pass
 
     def astar(self, sourceNode, targetNode):
-        if sourceNode in G and targsetNode in G:
+        if sourceNode in self.G and targetNode in self.G:
             try:
-                nodesInPath = nx.astar_path(G, sourceNode, targetNode)
-                # edgelist = [(nodesInPath[i], nodesInPath[i + 1]) for i in range(len(nodesInPath) - 1)]
+                nodesInPath = nx.astar_path(self.G, sourceNode, targetNode)
                 return nodesInPath
             except nx.NetworkXNoPath:
                 return None
@@ -45,7 +44,8 @@ class PathPlanner:
             print("Node doesn't exist")
             return None
 
-    def drawPath(self, G, edgelist):
+    def drawPath(self, G, nodesInPath):
+        edgelist = [(nodesInPath[i], nodesInPath[i + 1]) for i in range(len(nodesInPath) - 1)]
         CELL_LENGTH = 200
         pos = {}
         for node in G.nodes():
@@ -66,9 +66,10 @@ class PathPlanner:
 def pathPlanner():
     try:
         G = nx.read_gpickle(GRAPH_PICKLED_FILE_LOCATION)
+        global pathPlanner
         pathPlanner = PathPlanner(G)
-        rospy.spin()
         # edgelist = astar(G, (27, 48, 180), (60, 49, 180))
+        rospy.spin()
     except IOError:
         print(GRAPH_PICKLED_FILE_LOCATION +
               " doesn't exist. Run the following command to create it:\nrosrun sorting_robot generate_networkx_graph")
