@@ -6,9 +6,9 @@ import argparse
 import os
 
 homeDir = os.environ['HOME']
-MAP_CONFIG_FILE_LOCATION = homeDir + '/catkin_ws/src/sorting_robot/data/grid.npy'
-CELL_LENGTH = 0.5  # in meters
-ADD_ROBOT_TEMPLATE = 'rosrun stdr_robot robot_handler add ~/catkin_ws/src/stdr_test/robots/pandora_robot.yaml {} {} {}\n'
+MAP_CONFIG_FILE_LOCATION = homeDir + '/catkin_ws/src/sorting_robot/data/map_configuration.npy'
+
+ADD_ROBOT_TEMPLATE = 'rosrun stdr_robot robot_handler add $HOME/catkin_ws/src/sorting_robot/stdr_data/robots/pandora_robot.yaml {} {} {}\n'
 GENERATED_SCRIPT_FILE = homeDir + '/catkin_ws/src/sorting_robot/data/spawn_robots.sh'
 
 
@@ -42,12 +42,12 @@ def directionToRadians(direction):
         return math.radians(270)
 
 
-def convertCellsToCoordinates(freeCells, grid):
+def convertCellsToCoordinates(freeCells, grid, cellLength):
     result = []
-    RANGE_Y = grid.shape[0] * CELL_LENGTH
+    RANGE_Y = grid.shape[0] * cellLength
     for (r, c) in freeCells:
-        x = (c + 0.5) * CELL_LENGTH
-        y = (r + 0.5) * CELL_LENGTH
+        x = (c + 0.5) * cellLength
+        y = (r + 0.5) * cellLength
         y = RANGE_Y - y
         if len(grid[r][c].directions) == 0:
             raise RuntimeError(
@@ -59,11 +59,13 @@ def convertCellsToCoordinates(freeCells, grid):
 
 def generateSpawnLocations(numberOfLocations):
     try:
-        grid = np.load(MAP_CONFIG_FILE_LOCATION)
+        mapConfiguration = np.load(MAP_CONFIG_FILE_LOCATION).item()
+        grid = mapConfiguration['grid']
+        cellLength = mapConfiguration['cell_length_in_meters']
         cells = [(r, c) for r in range(grid.shape[0])
                  for c in range(grid.shape[1])]
         freeCells = getRandomFreePoints(numberOfLocations, cells, grid)
-        points = convertCellsToCoordinates(freeCells, grid)
+        points = convertCellsToCoordinates(freeCells, grid, cellLength)
 
         with open(GENERATED_SCRIPT_FILE, "w") as f:
             for point in points:

@@ -47,12 +47,11 @@ import copy
 from enum import Enum
 import os
 
-homeDir = os.environ['HOME']
-if not os.path.exists(homeDir + '/catkin_ws/src/sorting_robot/data'):
-    os.makedirs(homeDir + '/catkin_ws/src/sorting_robot/data')
+HOME_DIR = os.environ['HOME']
+if not os.path.exists(HOME_DIR + '/catkin_ws/src/sorting_robot/data'):
+    os.makedirs(HOME_DIR + '/catkin_ws/src/sorting_robot/data')
 
-CONFIG_FILE_SAVE_LOCATION = homeDir + '/catkin_ws/src/sorting_robot/data/grid.npy'
-PICKUP_FILE_SAVE_LOCATION = homeDir + '/catkin_ws/src/sorting_robot/data/pickup.npy'
+CONFIG_FILE_SAVE_LOCATION = HOME_DIR + '/catkin_ws/src/sorting_robot/data/map_configuration.npy'
 
 
 class CellType(Enum):
@@ -533,8 +532,16 @@ def generateMapConfig():
                 else:
                     pickups[grid[row][col].pickupId]['finish'] = (row, col)
                 pickups[grid[row][col].pickupId]['finish'] = (row, col)
-    np.save(PICKUP_FILE_SAVE_LOCATION, np.array(pickups))
 
+    mapConfiguration = {
+        'grid': grid,
+        'pickups': pickups,
+        'pickup_queue_size': pickupRows * 2 + pickupColumns - 2,
+        'num_rows': grid.shape[0],
+        'num_columns': grid.shape[1],
+        'cell_length_in_meters': 0.5,
+    }
+    np.save(CONFIG_FILE_SAVE_LOCATION, np.array(mapConfiguration))
 
 if __name__ == "__main__":
     generateMapConfig()

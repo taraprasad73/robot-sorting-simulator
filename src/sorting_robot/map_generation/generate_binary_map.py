@@ -5,10 +5,9 @@ import matplotlib.pyplot as plt
 from matplotlib.table import Table
 import os
 
-homeDir = os.environ['HOME']
-MAP_CONFIG_FILE_LOCATION = homeDir + '/catkin_ws/src/sorting_robot/data/grid.npy'
-BINARY_GRID_IMAGE_LOCATION = homeDir + '/catkin_ws/src/sorting_robot/data/binary_grid.png'
-PIXEL_TO_CELL_RATIO = 50
+HOME_DIR = os.environ['HOME']
+MAP_CONFIG_FILE_LOCATION = HOME_DIR + '/catkin_ws/src/sorting_robot/data/map_configuration.npy'
+BINARY_GRID_IMAGE_LOCATION = HOME_DIR + '/catkin_ws/src/sorting_robot/data/binary_grid.png'
 
 
 def saveDataToImage(data, filename):
@@ -21,17 +20,18 @@ def saveDataToImage(data, filename):
     im.save(filename, "PNG")
 
 
-def generateBinaryMap():
+def generateBinaryMap(pixelToCellRatio):
     try:
-        grid = np.load(MAP_CONFIG_FILE_LOCATION)
+        mapConfiguration = np.load(MAP_CONFIG_FILE_LOCATION).item()
+        grid = mapConfiguration['grid']
         enlargedBinaryGrid = np.ones(
-            (grid.shape[0] * PIXEL_TO_CELL_RATIO, grid.shape[1] * PIXEL_TO_CELL_RATIO), dtype=bool)
+            (grid.shape[0] * pixelToCellRatio, grid.shape[1] * pixelToCellRatio), dtype=bool)
 
         for row in range(grid.shape[0]):
             for col in range(grid.shape[1]):
                 if grid[row][col].isObstacle:
-                    enlargedBinaryGrid[row * PIXEL_TO_CELL_RATIO: (
-                        row + 1) * PIXEL_TO_CELL_RATIO, col * PIXEL_TO_CELL_RATIO: (col + 1) * PIXEL_TO_CELL_RATIO] = False
+                    enlargedBinaryGrid[row * pixelToCellRatio: (
+                        row + 1) * pixelToCellRatio, col * pixelToCellRatio: (col + 1) * pixelToCellRatio] = False
 
         saveDataToImage(enlargedBinaryGrid, BINARY_GRID_IMAGE_LOCATION)
     except IOError:
@@ -40,4 +40,4 @@ def generateBinaryMap():
 
 
 if __name__ == '__main__':
-    generateBinaryMap()
+    generateBinaryMap(50)

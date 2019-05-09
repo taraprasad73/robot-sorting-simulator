@@ -51,13 +51,17 @@ catkin_python_setup()
 ## Generate messages in the 'msg' folder
 add_message_files(
   FILES
-  Num.msg
+  HeatMap.msg
+  OccupancyMap.msg
+  Pose.msg
+  Cell.msg
 )
 
 ## Generate services in the 'srv' folder
 add_service_files(
   FILES
-  AddTwoInts.srv
+  Path.srv
+  PathToBin.srv
 )
 
 ## Generate actions in the 'action' folder
@@ -165,7 +169,11 @@ install(PROGRAMS
   scripts/generate_map_config
   scripts/generate_grid_image
   scripts/generate_binary_map
-  scripts/generateSpawnLocations
+  scripts/generate_spawn_locations
+  scripts/generate_networkx_graph
+  nodes/heatmap
+  nodes/visualize_heatmap
+  nodes/path_planner
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

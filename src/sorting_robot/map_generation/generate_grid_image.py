@@ -5,10 +5,10 @@ from enum import Enum
 from generate_map_config import Cell, Direction, Turn, CellType
 import os
 
-homeDir = os.environ['HOME']
-MAP_CONFIG_FILE_LOCATION = homeDir + '/catkin_ws/src/sorting_robot/data/grid.npy'
-MAP_IMAGE_FILE_SVG_SAVE_LOCATION = homeDir + '/catkin_ws/src/sorting_robot/data/map.svg'
-MAP_IMAGE_FILE_PNG_SAVE_LOCATION = homeDir + '/catkin_ws/src/sorting_robot/data/map.png'
+HOME_DIR = os.environ['HOME']
+MAP_CONFIG_FILE_LOCATION = HOME_DIR + '/catkin_ws/src/sorting_robot/data/map_configuration.npy'
+MAP_IMAGE_FILE_SVG_SAVE_LOCATION = HOME_DIR + '/catkin_ws/src/sorting_robot/data/map.svg'
+MAP_IMAGE_FILE_PNG_SAVE_LOCATION = HOME_DIR + '/catkin_ws/src/sorting_robot/data/map.png'
 
 LEFT_ARROW = u"\u2190"
 RIGHT_ARROW = u"\u2192"
@@ -92,7 +92,8 @@ def getColor(cell):
 
 def generateGridImage():
     try:
-        data = np.load(MAP_CONFIG_FILE_LOCATION)
+        mapConfiguration = np.load(MAP_CONFIG_FILE_LOCATION).item()
+        data = mapConfiguration['grid']
         rows, cols = data.shape[0], data.shape[1]
         width, height = 1.5 / cols, 1.5 / rows
         fig, ax = plt.subplots()

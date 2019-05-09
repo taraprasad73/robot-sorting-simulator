@@ -1,0 +1,16 @@
+autopep8==1.4.4
+backports.functools-lru-cache==1.5
+cycler==0.10.0
+enum34==1.1.6
+kiwisolver==1.0.1
+matplotlib==2.2.4
+numpy==1.16.2
+pep8==1.7.1
+Pillow==6.0.0
+pycodestyle==2.5.0
+pyparsing==2.4.0
+python-dateutil==2.8.0
+pytz==2019.1
+rope==0.14.0
+six==1.12.0
+subprocess32==3.5.3

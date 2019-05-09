@@ -1,38 +1,89 @@
 # Sorting Robot
 
-## Setup the environment
-~~~~
-pip install -r requirements.txt
-echo 'export PYTHONPATH="${PYTHONPATH}:/path/to/project"' >> .bashrc
-Setup ROS Kinetic and catkin workspace.
-Install the STDR simulator, refer http://wiki.ros.org/stdr_simulator
-~~~~
+## Setting up the environment
+ - Setup ROS Kinetic and catkin workspace.
+ - Install the STDR simulator, refer http://wiki.ros.org/stdr_simulator
+ - Setup the sorting_robot package.
+    ~~~~
+    cd $HOME/catkin_ws/src/
+    git clone https://github.com/taraprasad73/sorting_robot
+    pip install -r sorting_robot/requirements.txt
+    cd ..
+    catkin_make
+    ~~~~
 
-## ROS Package Creation
-~~~~
-catkin_create_pkg sorting_robot geometry_msgs nav_msgs rospy std_msgs message_generation message_runtime
-~~~~
+## Understanding the file structure of the package
+ - **/scripts** contains various python scripts, these files are executable and can be executed with rosrun
+ - **/nodes** contains various rosnodes, these files are executable and can be executed with rosrun
+ - **/src** contains the python packages, these files are used by the files in /scripts and /nodes, and shouldn't be invoked directly
+ - **/msg** contains message definitions
+ - **/srv** contains service definitions
+ - **/launch** contains launch files
+ - **/data** contains temporary files, this folder is added to .gitignore and hence is not tracked by git
+ - **/stdr_data** contains files needed to launch the stdr simulator
+ - **requirements.txt** contains the list of python package dependencies, can be installed through pip
+ - **setup.py** is the equivalent of makefile for python, allows the scripts and nodes to access the python files from /src folder 
+
+## Description of various script files [TODO]
+Any script file can be executed as rosrun sorting_robot name_of_script_file [command_line arguments if any]
+ - generate_map_config 
+ - generate_binary_map
+ - generate_grid_image
+ - generate_networkx_graph
+ - generate_spawn_locations
+
+## Description of various rosnode files [TODO]
+Any launch file can be executed as rosrun sorting_robot name_of_launch_file [command_line arguments if any]
+ - heatmap
+
+## Description of the python packages [TODO]
+ - sorting_robot
+   - map_generation
+   - stdr_initializer
+   - path_planning
+   - traffic_controller
+   - bfsm
 
 ## Spawn Robots on the STDR simulator
-Copy the stdr_launcher into catkin_ws/src and recompile. Then run the launcher to open stdr simulator.
+### Generate the map configuration file
 ~~~~
-cp -a stdr_launcher/. ~/catkin_ws/src/stdr_launcher
-cd ~/catkin_ws
-catkin_make
-roslaunch stdr_launcher server_with_map_and_gui.launch
-~~~~
+rosrun sorting_robot generate_map_config
 
-### Generate the configuration file of the map
-~~~~
-python map_generation/generate_map_config.py
-[optional] python map_generation/generate_colored_map.py
-
-The output files will be present in the /data folder.
+The output file will be generated in $HOME/catkin_ws/src/sorting_robot/data/ folder.
 ~~~~
 
 ### Generate the spawn locations and execute the script
 ~~~~
-python user_interface/generate_spawn_locations.py 5
-chmod +x data/spawn_robots.sh
-./data/spawn_robots.sh
+rosrun sorting_robot generate_spawn_locations.py [num_of_robots_to_spawn]
+chmod +x $HOME/catkin_ws/src/sorting_robot/data/spawn_robots.sh
+~~~~
+
+### Launch the STDR simulator
+~~~~
+Terminal 1: roscore
+Terminal 2: roslaunch sorting_robot stdr_server_with_map_and_gui.launch
+Terminal 3: bash $HOME/catkin_ws/src/sorting_robot/data/spawn_robots.sh
+~~~~
+
+## Code Formatter Settings for Visual Studio Code
+
+### Linter standard used
+ - **pep8** with E501 and E703 disabled
+ - **E501** - places a limit on the length of a line of code
+ - **E703** - doesn't allow semicolon at the end of a statement
+
+### Setting pep8 in VSCode
+Add the following lines to the settings.json found in File/Preferences/Settings. Don't remove any existing key value pairs present, unless its a duplicate.
+~~~~
+{
+    "python.linting.enabled": true,
+    "python.linting.pylintEnabled": false,
+    "python.linting.pep8Enabled": true,
+    "python.linting.pep8Args": [
+        "--ignore=E501,E703"
+    ],
+    "python.formatting.autopep8Args": [
+        "--ignore=E501,E703"
+    ],
+}
 ~~~~

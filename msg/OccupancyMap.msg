@@ -1,0 +1,1 @@
+bool[] occupancy_values
