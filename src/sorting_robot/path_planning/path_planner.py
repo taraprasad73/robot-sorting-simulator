@@ -3,7 +3,7 @@ import networkx as nx
 import numpy as np
 import matplotlib.pyplot as plt
 import rospy
-from sorting_robot.msg import Pose, Cell
+from sorting_robot.msg import State
 from sorting_robot.srv import *
 
 HOME_DIR = os.environ['HOME']
@@ -19,7 +19,7 @@ def handlePathRequest(req):
     source = req.source
     destination = req.destination
     nodes = pathPlanner.astar((source.row, source.col, source.direction), (destination.row, destination.col, destination.direction))
-    nodes = [Pose(*node) for node in nodes]
+    nodes = [State(*node) for node in nodes]
     return PathResponse(path=nodes)
 
 

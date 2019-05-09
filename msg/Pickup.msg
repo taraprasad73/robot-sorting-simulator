@@ -1,0 +1,2 @@
+int64 pickup_id
+sorting_robot/State location

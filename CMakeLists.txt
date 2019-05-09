@@ -53,8 +53,10 @@ add_message_files(
   FILES
   HeatMap.msg
   OccupancyMap.msg
-  Pose.msg
-  Cell.msg
+  State.msg
+  Pickup.msg
+  ReadyToPickup.msg
+  TrafficLight.msg
 )
 
 ## Generate services in the 'srv' folder
@@ -62,6 +64,9 @@ add_service_files(
   FILES
   Path.srv
   PathToBin.srv
+  PathInPickup.srv
+  TrafficService.srv
+  GetPickup.srv
 )
 
 ## Generate actions in the 'action' folder

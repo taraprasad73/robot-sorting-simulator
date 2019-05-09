@@ -3,7 +3,7 @@
 import sys
 import rospy
 from sorting_robot.srv import Path
-from sorting_robot.msg import Pose
+from sorting_robot.msg import State
 
 
 def getPath(source, destination):
@@ -17,8 +17,8 @@ def getPath(source, destination):
 
 
 if __name__ == "__main__":
-    source = Pose(27, 48, 180)
-    destination = Pose(60, 49, 180)
+    source = State(27, 48, 180)
+    destination = State(60, 49, 180)
     path = getPath(source, destination)
     path = [(pose.row, pose.col, pose.direction) for pose in path]
     print(path)
