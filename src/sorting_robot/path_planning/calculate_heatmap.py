@@ -2,15 +2,15 @@ import argparse;
 import rospy;
 import re;
 import numpy as np;
-import os
+import os;
 from geometry_msgs.msg import Pose;
 from nav_msgs.msg import Odometry;
 from sorting_robot.msg import HeatMap, OccupancyMap;
 
-HOME_DIR = os.environ['HOME']
-MAP_CONFIG_FILE_LOCATION = HOME_DIR + '/catkin_ws/src/sorting_robot/data/map_configuration.npy'
+HOME_DIR = os.environ['HOME'];
+MAP_CONFIG_FILE_LOCATION = HOME_DIR + '/catkin_ws/src/sorting_robot/data/map_configuration.npy';
 
-HEATMAP_PUBLISH_RATE = 1
+HEATMAP_PUBLISH_RATE = 1;
 
 
 def convertCoordinatesToCells(point, gridShape, cellLength):
@@ -22,8 +22,8 @@ def convertCoordinatesToCells(point, gridShape, cellLength):
 class Heatmap:
     def __init__(self, numRows, numColumns, cellLength):
         rospy.init_node('heatmap', anonymous=False);
-        self.gridShape = (numRows, numColumns)
-        self.cellLength = cellLength
+        self.gridShape = (numRows, numColumns);
+        self.cellLength = cellLength;
         self.heatmapPublisher = rospy.Publisher('/heat_map', HeatMap, queue_size=10);
         self.occupancyPublisher = rospy.Publisher('/occupancy_map', OccupancyMap, queue_size=10);
         self.subscribers = [];
@@ -31,7 +31,6 @@ class Heatmap:
         self.findTopics();
         self.eta = 0.1;
         self.previousMap = np.zeros((numRows, numColumns));
-        # self.update = lambda data,name: self.positions[name] = data.pose.pose;
 
     def callback(self, data, name):
         self.positions[name] = data.pose.pose;
@@ -63,9 +62,9 @@ class Heatmap:
         rate = rospy.Rate(HEATMAP_PUBLISH_RATE);
         while not rospy.is_shutdown():
             occupancyMap, heatmap = self.getHeatmap();
-            self.heatmapPublisher.publish(heat_values=heatmap.flatten());
-            self.occupancyPublisher.publish(occupancy_values=occupancyMap.flatten());
-            rate.sleep()
+            self.heatmapPublisher.publish(heat_values=heatmap.flatten(), rows=self.gridShape[0], columns=self.gridShape[1]);
+            self.occupancyPublisher.publish(occupancy_values=occupancyMap.flatten(), rows=self.gridShape[0], cols=self.gridShape[1]);
+            rate.sleep();
 
 
 def calculateHeatmap():
@@ -79,4 +78,4 @@ def calculateHeatmap():
 
 
 if __name__ == "__main__":
-    calculateHeatmap()
+    calculateHeatmap();

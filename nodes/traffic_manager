@@ -1,0 +1,16 @@
+#!/usr/bin/env python
+
+import argparse
+from sorting_robot.traffic_manager import traffic_manager
+
+
+def parseArgs():
+    parser = argparse.ArgumentParser(
+        description="parameters for the traffic manager")
+    parser.add_argument("k", type=int, help="value of k")
+    args = parser.parse_args()
+    return args.k
+
+
+if __name__ == '__main__':
+    traffic_manager(parseArgs())
