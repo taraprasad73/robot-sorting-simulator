@@ -150,7 +150,7 @@ class HighwaySignal:
                 count += 1;
         return count;
 
-    def horizontal_waiting(self, k_blocks):
+    def horizontal_waiting(self):
         count = 0;
         for i in range(self.col + 1, min(self.col + self.k + 1, self.cols)):
             if(occupancy_map[self.row + 1][i] is True):
@@ -270,7 +270,7 @@ class TrafficManager:
 
     def close(self):
         for i in range(0, len(self.threads)):
-            threads[i].join();
+            self.threads[i].join();
 
 
 def traffic_manager(k):
@@ -278,7 +278,7 @@ def traffic_manager(k):
         mapConfiguration = np.load(MAP_CONFIG_FILE_LOCATION).item();
         grid = mapConfiguration['grid'];
         manager = TrafficManager(k, grid);
-        rospy.spin();
+	print("Traffic signals are running");
         manager.visualize();
         manager.close();
     except IOError:
