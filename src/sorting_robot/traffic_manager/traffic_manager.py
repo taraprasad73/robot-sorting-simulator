@@ -197,10 +197,10 @@ class TrafficManager:
         self.threads = [];
         for i in range(rows):
             for j in range(cols):
-                if(data[i][j].cellType == CellType.SIMPLE_INTERSECTION):
+                if(data[i][j].cellType == CellType.STREET_STREET_INTERSECTION):
                     traffic_signal = StreetSignal(i, j, rows, cols, data[i][j].directions, self.k);
                     self.traffic_signals[(i, j)] = traffic_signal;
-                if(data[i][j].cellType == CellType.HIGHWAY_INTERSECTION):
+                if(data[i][j].cellType == CellType.HIGHWAY_HIGHWAY_INTERSECTION):
                     if(self.topleft(i, j, rows, cols) is False):
                         continue;
                     traffic_signal = HighwaySignal(i, j, rows, cols, self.k);
@@ -237,28 +237,28 @@ class TrafficManager:
         def bounds(i, j, rows, cols):
             return i >= 0 and j >= 0 and i < rows and j < cols;
 
-        if(bounds(i - 1, j, rows, cols) is True and self.data[i - 1][j].cellType == CellType.HIGHWAY_INTERSECTION):
+        if(bounds(i - 1, j, rows, cols) is True and self.data[i - 1][j].cellType == CellType.HIGHWAY_HIGHWAY_INTERSECTION):
             return False;
-        if(bounds(i, j - 1, rows, cols) is True and self.data[i][j - 1].cellType == CellType.HIGHWAY_INTERSECTION):
+        if(bounds(i, j - 1, rows, cols) is True and self.data[i][j - 1].cellType == CellType.HIGHWAY_HIGHWAY_INTERSECTION):
             return False;
         return True;
 
     def visualize(self):
         rows, cols = self.data.shape[0], self.data.shape[1];
-        enlarge_ratio = 50;
+        enlarge_ratio = 1;
         image = np.zeros((rows * enlarge_ratio, cols * enlarge_ratio, 3), dtype='uint8');
         # Traffic: Horizontal is green and Traffic Vertical is red
         plt.show();
         while not rospy.is_shutdown():
             for i in range(0, rows):
                 for j in range(0, cols):
-                    if(self.data[i][j].cellType == CellType.SIMPLE_INTERSECTION):
+                    if(self.data[i][j].cellType == CellType.STREET_STREET_INTERSECTION):
                         signal = self.traffic_signals[(i, j)].get_signal();
                         if(signal.left is True or signal.right is True):
                             image[i * enlarge_ratio:(i + 1) * enlarge_ratio][j * enlarge_ratio:(j + 1) * enlarge_ratio] = np.array([0, 255, 0]);
                         else:
                             image[i * enlarge_ratio:(i + 1) * enlarge_ratio][j * enlarge_ratio:(j + 1) * enlarge_ratio] = np.array([255, 0, 0]);
-                    if(self.data[i][j].cellType == CellType.HIGHWAY_INTERSECTION):
+                    if(self.data[i][j].cellType == CellType.HIGHWAY_HIGHWAY_INTERSECTION):
                         signal = self.traffic_signals[(i, j)].get_signal();
                         if(signal.left is True):
                             image[i * enlarge_ratio:(i + 1) * enlarge_ratio][j * enlarge_ratio:(j + 1) * enlarge_ratio] = np.array([0, 255, 0]);
@@ -278,7 +278,7 @@ def traffic_manager(k):
         mapConfiguration = np.load(MAP_CONFIG_FILE_LOCATION).item();
         grid = mapConfiguration['grid'];
         manager = TrafficManager(k, grid);
-	print("Traffic signals are running");
+        print("Traffic signals are running");
         manager.visualize();
         manager.close();
     except IOError:

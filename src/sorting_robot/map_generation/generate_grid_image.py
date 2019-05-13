@@ -21,9 +21,11 @@ RIGHT_UP_ARROW = u"\u2B0F"
 UP_LEFT_ARROW = u"\u21B0"
 
 
-HIGHWAY_COLOR = 'orange'
-SIMPLE_INTERSECTION_COLOR = 'white'
-SIMPLE_ONE_WAY_ROAD_COLOR = 'white'
+ONE_WAY_ROAD_ON_HIGHWAY_COLOR = 'orange'
+ONE_WAY_ROAD_ON_STREET_COLOR = 'white'
+STREET_STREET_INTERSECTION_COLOR = 'white'
+HIGHWAY_HIGHWAY_INTERSECTION_COLOR = 'green'
+HIGHWAY_STREET_INTERSECTION_COLOR = 'pink'
 BIN_COLOR = 'black'
 PICKUP_LANE_COLOR = 'yellow'
 PICKUP_AREA_COLOR = 'blue'
@@ -66,13 +68,15 @@ def getColor(cell):
     if cell.cellType == CellType.PARCEL_BIN:
         color = BIN_COLOR
     elif cell.cellType == CellType.ONE_WAY_ROAD_ON_HIGHWAY:
-        color = HIGHWAY_COLOR
-    elif cell.cellType == CellType.ONE_WAY_ROAD_NOT_ON_HIGHWAY:
-        color = SIMPLE_ONE_WAY_ROAD_COLOR
-    elif cell.cellType == CellType.SIMPLE_INTERSECTION:
-        color = SIMPLE_INTERSECTION_COLOR
-    elif cell.cellType == CellType.HIGHWAY_INTERSECTION:
-        color = HIGHWAY_COLOR
+        color = ONE_WAY_ROAD_ON_HIGHWAY_COLOR
+    elif cell.cellType == CellType.ONE_WAY_ROAD_ON_STREET:
+        color = ONE_WAY_ROAD_ON_STREET_COLOR
+    elif cell.cellType == CellType.STREET_STREET_INTERSECTION:
+        color = STREET_STREET_INTERSECTION_COLOR
+    elif cell.cellType == CellType.HIGHWAY_HIGHWAY_INTERSECTION:
+        color = HIGHWAY_HIGHWAY_INTERSECTION_COLOR
+    elif cell.cellType == CellType.HIGHWAY_STREET_INTERSECTION:
+        color = HIGHWAY_STREET_INTERSECTION_COLOR
     elif cell.cellType == CellType.RESTRICTED_AREA:
         color = RESTRICTED_AREA_COLOR
     elif cell.cellType == CellType.CHARGING_AREA:
