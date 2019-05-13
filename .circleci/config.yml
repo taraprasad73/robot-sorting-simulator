@@ -9,10 +9,9 @@ dependencies:
         - sudo rosdep init
         - rosdep update
         - echo "source /opt/ros/kinetic/setup.bash" >> ~/.bashrc
-        - source /opt/ros/kinetic/setup.bash
         - mkdir -p ~/catkin_ws/src && cd ~/catkin_ws/ && catkin_make
         - echo "source $HOME/catkin_ws/devel/setup.bash" >> ~/.bashrc
-        - source $HOME/catkin_ws/devel/setup.bash
+
 jobs:
   build:
     docker: # executor type
@@ -25,8 +24,10 @@ jobs:
         - run:
             name: Running catkin_make
             command: |
+                source ~/.bashrc
                 cd ~/catkin_ws/
                 catkin_make
         - run: 
             name: Running script generate_map_config
-            command: rosrun sorting_robot generate_map_config
+            command: |
+                rosrun sorting_robot generate_map_config
