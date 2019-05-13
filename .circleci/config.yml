@@ -3,7 +3,7 @@ version: 2
 jobs:
   build:
     docker: # executor type
-        - image: buildpack-deps:trusty # primary container will run Ubuntu Trusty
+        - image: buildpack-deps:xenial
     
     working_directory: ~/catkin_ws/src/
     
