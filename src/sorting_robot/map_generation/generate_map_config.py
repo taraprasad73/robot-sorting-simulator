@@ -6,7 +6,7 @@ import os
 
 HOME_DIR = os.environ['HOME']
 CATKIN_WORKSPACE = HOME_DIR + '/catkin_ws/'
-if os.environ['CATKIN_WORKSPACE']:
+if os.environ.get('CATKIN_WORKSPACE'):
     CATKIN_WORKSPACE = os.environ['CATKIN_WORKSPACE']
 if not os.path.exists(CATKIN_WORKSPACE + '/src/sorting_robot/data'):
     os.makedirs(CATKIN_WORKSPACE + '/src/sorting_robot/data')

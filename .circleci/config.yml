@@ -1,0 +1,22 @@
+version: 2
+
+dependencies:
+   pre:
+       - sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
+       - sudo apt-key adv --keyserver hkp://ha.pool.sks-keyservers.net:80 --recv-key 421C365BD9FF1F717815A3895523BAEEB01FA116
+       - sudo apt-get update
+       - sudo apt-get install ros-kinetic-ros-base
+       - sudo rosdep init
+       - rosdep update
+       - echo "source /opt/ros/kinetic/setup.bash" >> ~/.bashrc
+       - mkdir -p ~/catkin_ws/src && cd ~/catkin_ws/ && catkin_make
+       - echo "source $HOME/catkin_ws/devel/setup.bash" >> ~/.bashrc
+       - cd ~/catkin_ws/src/
+       - git clone https://github.com/taraprasad73/sorting_robot
+       - cd .. && catkin_make
+jobs:
+  build:
+    steps:
+      - run: 
+        name: Running script generate_map_config
+        command: rosrun sorting_robot generate_map_config
