@@ -43,6 +43,7 @@ jobs:
         - run:
             name: Running catkin_make
             command: |
+                pip install -r ~/catkin_ws/src/sorting_robot/requirements.txt
                 source ~/.bashrc
                 cd ~/catkin_ws/
                 catkin_make
