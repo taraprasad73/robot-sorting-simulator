@@ -66,9 +66,9 @@
   <exec_depend>rospy</exec_depend>
   <exec_depend>std_msgs</exec_depend>
 
-  <exec_depend>python-numpy</exec_depend>
+  <!-- <exec_depend>python-numpy</exec_depend>
   <exec_depend>python-matplotlib</exec_depend>
-  <exec_depend>python-imaging</exec_depend>
+  <exec_depend>python-imaging</exec_depend> -->
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>
