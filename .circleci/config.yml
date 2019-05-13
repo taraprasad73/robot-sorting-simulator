@@ -20,6 +20,7 @@ jobs:
             name: Install ROS Kinetic
             command: |
                 sudo apt-get install ros-kinetic-ros-base
+                sudo apt install python-rosinstall python-rosinstall-generator python-wstool build-essential
 
         - run:
             name: Initialize rosdep
