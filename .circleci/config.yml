@@ -2,9 +2,8 @@ version: 2
 
 jobs:
   build:
-    # docker: # executor type
-    #     - image: buildpack-deps:xenial
-    machine: true
+    docker: # executor type
+        - image: circleci/python:2.7.16
 
     working_directory: ~/catkin_ws/src/
     
