@@ -2,9 +2,10 @@ version: 2
 
 jobs:
   build:
-    docker: # executor type
-        - image: buildpack-deps:xenial
-    
+    # docker: # executor type
+    #     - image: buildpack-deps:xenial
+    machine: true
+
     working_directory: ~/catkin_ws/src/
     
     steps:
