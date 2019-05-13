@@ -1,3 +1,6 @@
 *.pyc
 .vscode/
-data/
+data/graph.svg
+data/map.png
+data/map.svg
+data/spawn_robots.sh

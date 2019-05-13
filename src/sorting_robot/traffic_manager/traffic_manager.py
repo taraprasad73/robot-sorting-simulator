@@ -17,8 +17,11 @@ RG - Horizontal Red and Vertical Green
 RY - Horizontal Red and Vertical Yellow
 '''
 
-homeDir = os.environ['HOME']
-MAP_CONFIG_FILE_LOCATION = homeDir + '/catkin_ws/src/sorting_robot/data/map_configuration.npy'
+HOME_DIR = os.environ['HOME']
+CATKIN_WORKSPACE = HOME_DIR + '/catkin_ws/'
+if os.environ['CATKIN_WORKSPACE']:
+    CATKIN_WORKSPACE = os.environ['CATKIN_WORKSPACE']
+CONFIG_FILE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/map_configuration.npy'
 occupancy_map = [];
 
 
@@ -275,14 +278,14 @@ class TrafficManager:
 
 def traffic_manager(k):
     try:
-        mapConfiguration = np.load(MAP_CONFIG_FILE_LOCATION).item();
+        mapConfiguration = np.load(CONFIG_FILE_LOCATION).item();
         grid = mapConfiguration['grid'];
         manager = TrafficManager(k, grid);
         print("Traffic signals are running");
         manager.visualize();
         manager.close();
     except IOError:
-        print(MAP_CONFIG_FILE_LOCATION +
+        print(CONFIG_FILE_LOCATION +
               " doesn't exist. Run the following command to create it:\nrosrun sorting_robot generate_map_config")
 
 

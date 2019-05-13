@@ -6,9 +6,12 @@ from generate_map_config import Cell, Direction, Turn, CellType
 import os
 
 HOME_DIR = os.environ['HOME']
-MAP_CONFIG_FILE_LOCATION = HOME_DIR + '/catkin_ws/src/sorting_robot/data/map_configuration.npy'
-MAP_IMAGE_FILE_SVG_SAVE_LOCATION = HOME_DIR + '/catkin_ws/src/sorting_robot/data/map.svg'
-MAP_IMAGE_FILE_PNG_SAVE_LOCATION = HOME_DIR + '/catkin_ws/src/sorting_robot/data/map.png'
+CATKIN_WORKSPACE = HOME_DIR + '/catkin_ws/'
+if os.environ['CATKIN_WORKSPACE']:
+    CATKIN_WORKSPACE = os.environ['CATKIN_WORKSPACE']
+CONFIG_FILE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/map_configuration.npy'
+MAP_IMAGE_FILE_SVG_SAVE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/map.svg'
+MAP_IMAGE_FILE_PNG_SAVE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/map.png'
 
 LEFT_ARROW = u"\u2190"
 RIGHT_ARROW = u"\u2192"
@@ -96,7 +99,7 @@ def getColor(cell):
 
 def generateGridImage():
     try:
-        mapConfiguration = np.load(MAP_CONFIG_FILE_LOCATION).item()
+        mapConfiguration = np.load(CONFIG_FILE_LOCATION).item()
         data = mapConfiguration['grid']
         rows, cols = data.shape[0], data.shape[1]
         width, height = 1.5 / cols, 1.5 / rows
@@ -132,7 +135,7 @@ def generateGridImage():
         plt.savefig(MAP_IMAGE_FILE_PNG_SAVE_LOCATION, format='png', dpi=1200)
         plt.savefig(MAP_IMAGE_FILE_SVG_SAVE_LOCATION, format='svg', dpi=1200)
     except IOError:
-        print(MAP_CONFIG_FILE_LOCATION +
+        print(CONFIG_FILE_LOCATION +
               " doesn't exist. Run the following command to create it:\nrosrun sorting_robot generate_map_config")
 
 

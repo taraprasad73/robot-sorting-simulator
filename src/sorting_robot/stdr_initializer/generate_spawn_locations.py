@@ -5,11 +5,14 @@ import math
 import argparse
 import os
 
-homeDir = os.environ['HOME']
-MAP_CONFIG_FILE_LOCATION = homeDir + '/catkin_ws/src/sorting_robot/data/map_configuration.npy'
+HOME_DIR = os.environ['HOME']
+CATKIN_WORKSPACE = HOME_DIR + '/catkin_ws/'
+if os.environ['CATKIN_WORKSPACE']:
+    CATKIN_WORKSPACE = os.environ['CATKIN_WORKSPACE']
+CONFIG_FILE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/map_configuration.npy'
+GENERATED_SCRIPT_FILE = CATKIN_WORKSPACE + '/src/sorting_robot/data/spawn_robots.sh'
 
 ADD_ROBOT_TEMPLATE = 'rosrun stdr_robot robot_handler add $HOME/catkin_ws/src/sorting_robot/stdr_data/robots/pandora_robot.yaml {} {} {}\n'
-GENERATED_SCRIPT_FILE = homeDir + '/catkin_ws/src/sorting_robot/data/spawn_robots.sh'
 
 
 def parseArgs():
@@ -59,7 +62,7 @@ def convertCellsToCoordinates(freeCells, grid, cellLength):
 
 def generateSpawnLocations(numberOfLocations):
     try:
-        mapConfiguration = np.load(MAP_CONFIG_FILE_LOCATION).item()
+        mapConfiguration = np.load(CONFIG_FILE_LOCATION).item()
         grid = mapConfiguration['grid']
         cellLength = mapConfiguration['cell_length_in_meters']
         cells = [(r, c) for r in range(grid.shape[0])
@@ -71,7 +74,7 @@ def generateSpawnLocations(numberOfLocations):
             for point in points:
                 f.write(ADD_ROBOT_TEMPLATE.format(*point))
     except IOError:
-        print(MAP_CONFIG_FILE_LOCATION +
+        print(CONFIG_FILE_LOCATION +
               " doesn't exist. Run the following command to create it:\nrosrun sorting_robot generate_map_config")
 
 

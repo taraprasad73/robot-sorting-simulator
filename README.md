@@ -3,6 +3,10 @@
 ## Setting up the environment
  - Setup ROS Kinetic and catkin workspace.
  - Install the STDR simulator, refer http://wiki.ros.org/stdr_simulator
+ - If your location of catkin workspace is other than $HOME/catkin_ws/ then set a CATKIN_WORKSPACE path variable.
+    ~~~~
+    echo 'export CATKIN_WORKSPACE=$HOME/my_catkin_ws/' >> $HOME/.bashrc
+    ~~~~
  - Setup the sorting_robot package.
     ~~~~
     cd $HOME/catkin_ws/src/

@@ -5,9 +5,12 @@ from generate_map_config import Cell, Direction, Turn, CellType
 import os
 
 HOME_DIR = os.environ['HOME']
-MAP_CONFIG_FILE_LOCATION = HOME_DIR + '/catkin_ws/src/sorting_robot/data/map_configuration.npy'
-GRAPH_PICKLED_FILE_SAVE_LOCATION = HOME_DIR + '/catkin_ws/src/sorting_robot/data/graph.gpickle'
-GRAPH_IMAGE_FILE_SAVE_LOCATION = HOME_DIR + '/catkin_ws/src/sorting_robot/data/graph.svg'
+CATKIN_WORKSPACE = HOME_DIR + '/catkin_ws/'
+if os.environ['CATKIN_WORKSPACE']:
+    CATKIN_WORKSPACE = os.environ['CATKIN_WORKSPACE']
+CONFIG_FILE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/map_configuration.npy'
+GRAPH_PICKLED_FILE_SAVE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/graph.gpickle'
+GRAPH_IMAGE_FILE_SAVE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/graph.svg'
 
 TURN_COST = 50
 MOVE_COST = 20
@@ -64,7 +67,7 @@ def addEdges(grid, graph):
 
 def generateNetworkxGraph():
     try:
-        mapConfiguration = np.load(MAP_CONFIG_FILE_LOCATION).item()
+        mapConfiguration = np.load(CONFIG_FILE_LOCATION).item()
         grid = mapConfiguration['grid']
         G = nx.DiGraph()
         addEdges(grid, G)
@@ -85,7 +88,7 @@ def generateNetworkxGraph():
         plt.savefig(GRAPH_IMAGE_FILE_SAVE_LOCATION, dpi=4800)
         nx.write_gpickle(G, GRAPH_PICKLED_FILE_SAVE_LOCATION)
     except:
-        print(MAP_CONFIG_FILE_LOCATION +
+        print(CONFIG_FILE_LOCATION +
               " doesn't exist. Run the following command to create it:\nrosrun sorting_robot generate_map_config")
 
 

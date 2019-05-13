@@ -5,10 +5,12 @@ from enum import Enum
 import os
 
 HOME_DIR = os.environ['HOME']
-if not os.path.exists(HOME_DIR + '/catkin_ws/src/sorting_robot/data'):
-    os.makedirs(HOME_DIR + '/catkin_ws/src/sorting_robot/data')
-
-CONFIG_FILE_SAVE_LOCATION = HOME_DIR + '/catkin_ws/src/sorting_robot/data/map_configuration.npy'
+CATKIN_WORKSPACE = HOME_DIR + '/catkin_ws/'
+if os.environ['CATKIN_WORKSPACE']:
+    CATKIN_WORKSPACE = os.environ['CATKIN_WORKSPACE']
+if not os.path.exists(CATKIN_WORKSPACE + '/src/sorting_robot/data'):
+    os.makedirs(CATKIN_WORKSPACE + '/src/sorting_robot/data')
+CONFIG_FILE_SAVE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/map_configuration.npy'
 
 
 class CellType(Enum):

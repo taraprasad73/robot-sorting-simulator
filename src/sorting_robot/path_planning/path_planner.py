@@ -7,8 +7,11 @@ from sorting_robot.msg import State
 from sorting_robot.srv import *
 
 HOME_DIR = os.environ['HOME']
-ANNOTATED_GRAPH_IMAGE_FILE_SAVE_LOCATION = HOME_DIR + '/catkin_ws/src/sorting_robot/data/annotated_graph.svg'
-GRAPH_PICKLED_FILE_LOCATION = HOME_DIR + '/catkin_ws/src/sorting_robot/data/graph.gpickle'
+CATKIN_WORKSPACE = HOME_DIR + '/catkin_ws/'
+if os.environ['CATKIN_WORKSPACE']:
+    CATKIN_WORKSPACE = os.environ['CATKIN_WORKSPACE']
+ANNOTATED_GRAPH_IMAGE_FILE_SAVE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/annotated_graph.svg'
+GRAPH_PICKLED_FILE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/graph.gpickle'
 
 
 def handlePathToBinRequest(req):

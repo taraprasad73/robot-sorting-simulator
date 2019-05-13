@@ -6,8 +6,11 @@ from matplotlib.table import Table
 import os
 
 HOME_DIR = os.environ['HOME']
-MAP_CONFIG_FILE_LOCATION = HOME_DIR + '/catkin_ws/src/sorting_robot/data/map_configuration.npy'
-BINARY_GRID_IMAGE_LOCATION = HOME_DIR + '/catkin_ws/src/sorting_robot/data/binary_grid.png'
+CATKIN_WORKSPACE = HOME_DIR + '/catkin_ws/'
+if os.environ['CATKIN_WORKSPACE']:
+    CATKIN_WORKSPACE = os.environ['CATKIN_WORKSPACE']
+CONFIG_FILE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/map_configuration.npy'
+BINARY_GRID_IMAGE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/binary_grid.png'
 
 
 def saveDataToImage(data, filename):
@@ -22,7 +25,7 @@ def saveDataToImage(data, filename):
 
 def generateBinaryMap(pixelToCellRatio):
     try:
-        mapConfiguration = np.load(MAP_CONFIG_FILE_LOCATION).item()
+        mapConfiguration = np.load(CONFIG_FILE_LOCATION).item()
         grid = mapConfiguration['grid']
         enlargedBinaryGrid = np.ones(
             (grid.shape[0] * pixelToCellRatio, grid.shape[1] * pixelToCellRatio), dtype=bool)
@@ -35,7 +38,7 @@ def generateBinaryMap(pixelToCellRatio):
 
         saveDataToImage(enlargedBinaryGrid, BINARY_GRID_IMAGE_LOCATION)
     except IOError:
-        print(MAP_CONFIG_FILE_LOCATION +
+        print(CONFIG_FILE_LOCATION +
               " doesn't exist. Run the following command to create it:\nrosrun sorting_robot generate_map_config")
 
 

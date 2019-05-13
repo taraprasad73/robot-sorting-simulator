@@ -7,8 +7,11 @@ from geometry_msgs.msg import Pose;
 from nav_msgs.msg import Odometry;
 from sorting_robot.msg import HeatMap, OccupancyMap;
 
-HOME_DIR = os.environ['HOME'];
-MAP_CONFIG_FILE_LOCATION = HOME_DIR + '/catkin_ws/src/sorting_robot/data/map_configuration.npy';
+HOME_DIR = os.environ['HOME']
+CATKIN_WORKSPACE = HOME_DIR + '/catkin_ws/'
+if os.environ['CATKIN_WORKSPACE']:
+    CATKIN_WORKSPACE = os.environ['CATKIN_WORKSPACE']
+CONFIG_FILE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/map_configuration.npy'
 
 HEATMAP_PUBLISH_RATE = 1;
 
@@ -69,11 +72,11 @@ class Heatmap:
 
 def calculateHeatmap():
     try:
-        mapConfiguration = np.load(MAP_CONFIG_FILE_LOCATION).item();
+        mapConfiguration = np.load(CONFIG_FILE_LOCATION).item();
         heatmap = Heatmap(mapConfiguration['num_rows'], mapConfiguration['num_columns'], mapConfiguration['cell_length_in_meters']);
         heatmap.run();
     except IOError:
-        print(MAP_CONFIG_FILE_LOCATION +
+        print(CONFIG_FILE_LOCATION +
               " doesn't exist. Run the following command to create it:\nrosrun sorting_robot generate_map_config");
 
 

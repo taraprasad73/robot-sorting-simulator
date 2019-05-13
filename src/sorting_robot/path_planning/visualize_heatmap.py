@@ -12,14 +12,10 @@ def updatePlot(data):
 
 
 def heatmapVisualizer():
-    try:
-        rospy.init_node('heatmap_visualizer', anonymous=True)
-        plt.show()
-        rospy.Subscriber('heat_map', HeatMap, updatePlot)
-        rospy.spin()
-    except IOError:
-        print(MAP_CONFIG_FILE_LOCATION +
-              " doesn't exist. Run the following command to create it:\nrosrun sorting_robot generate_map_config");
+    rospy.init_node('heatmap_visualizer', anonymous=True)
+    plt.show()
+    rospy.Subscriber('heat_map', HeatMap, updatePlot)
+    rospy.spin()
 
 
 if __name__ == '__main__':
