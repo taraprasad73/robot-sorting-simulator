@@ -19,7 +19,8 @@ jobs:
         - run:
             name: Install ROS Kinetic
             command: |
-                sudo apt-get install ros-kinetic-ros-base
+                # sudo apt-get install ros-kinetic-ros-base
+                sudo apt-get install ros-kinetic-desktop-full
                 sudo apt install python-rosinstall python-rosinstall-generator python-wstool build-essential
 
         - run:
