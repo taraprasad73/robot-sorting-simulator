@@ -1,9 +1,8 @@
-from generate_map_config import Cell, CellType, Direction, Turn
+import os
 import numpy as np
 from PIL import Image
-import matplotlib.pyplot as plt
-from matplotlib.table import Table
-import os
+from generate_map_config import Cell, CellType, Direction, Turn
+
 
 HOME_DIR = os.environ['HOME']
 CATKIN_WORKSPACE = HOME_DIR + '/catkin_ws/'

@@ -1,8 +1,12 @@
+import os
 import numpy as np
 import networkx as nx
+if os.environ.get('CIRCLECI'):
+    import matplotlib
+    matplotlib.use('agg')
 import matplotlib.pyplot as plt
 from generate_map_config import Cell, Direction, Turn, CellType
-import os
+
 
 HOME_DIR = os.environ['HOME']
 CATKIN_WORKSPACE = HOME_DIR + '/catkin_ws/'

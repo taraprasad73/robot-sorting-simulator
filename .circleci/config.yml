@@ -45,7 +45,7 @@ jobs:
         - run:
             name: Install project dependencies
             command: |
-                sudo apt-get install python-tk
+                # sudo apt-get install python-tk
                 pip install pyyaml empy
                 pip install -r ~/catkin_ws/src/sorting_robot/requirements.txt
         
@@ -61,3 +61,21 @@ jobs:
             command: |
                 source ~/.bashrc
                 rosrun sorting_robot generate_map_config
+        
+        - run: 
+            name: Running script generate_binary_map
+            command: |
+                source ~/.bashrc
+                rosrun sorting_robot generate_binary_map
+
+        - run: 
+            name: Running script generate_grid_image
+            command: |
+                source ~/.bashrc
+                rosrun sorting_robot generate_grid_image
+
+        - run: 
+            name: Running script generate_networkx_graph
+            command: |
+                source ~/.bashrc
+                rosrun sorting_robot generate_networkx_graph
