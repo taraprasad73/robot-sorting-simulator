@@ -33,7 +33,7 @@ jobs:
             name: Setup catkin workspace
             command: |
                 sudo apt-get install python-pip
-                pip install catkin_pkg pyyaml empy
+                pip install catkin_pkg
                 echo "source /opt/ros/kinetic/setup.bash" >> ~/.bashrc
                 source ~/.bashrc
                 mkdir -p ~/catkin_ws/src && cd ~/catkin_ws/ && catkin_make
@@ -42,9 +42,15 @@ jobs:
         - checkout
 
         - run:
+            name: Install project dependencies
+            command: |
+                sudo apt-get install python-tk
+                pip install pyyaml empy
+                pip install -r ~/catkin_ws/src/sorting_robot/requirements.txt
+        
+        - run:
             name: Running catkin_make
             command: |
-                pip install -r ~/catkin_ws/src/sorting_robot/requirements.txt
                 source ~/.bashrc
                 cd ~/catkin_ws/
                 catkin_make
