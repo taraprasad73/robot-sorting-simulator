@@ -86,6 +86,7 @@ Terminal 3: bash $HOME/catkin_ws/src/sorting_robot/data/spawn_robots.sh
  - **pep8** with E501 and E703 disabled
  - **E501** - places a limit on the length of a line of code
  - **E703** - doesn't allow semicolon at the end of a statement
+ - **E402** - forces module level import at top of file
 
 ### Setting pep8 in VSCode
 Add the following lines to the settings.json found in File/Preferences/Settings. Don't remove any existing key value pairs present, unless its a duplicate.
@@ -95,10 +96,10 @@ Add the following lines to the settings.json found in File/Preferences/Settings.
     "python.linting.pylintEnabled": false,
     "python.linting.pep8Enabled": true,
     "python.linting.pep8Args": [
-        "--ignore=E501,E703"
+        "--ignore=E501,E703,E402"
     ],
     "python.formatting.autopep8Args": [
-        "--ignore=E501,E703"
+        "--ignore=E501,E703,E402"
     ],
 }
 ~~~~

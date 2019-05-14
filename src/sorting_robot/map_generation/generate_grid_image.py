@@ -1,9 +1,16 @@
+'''
+TODO add color coded legend, pick a different color for each cell type
+'''
+
 import numpy as np
+import os
+if os.environ.get('CIRCLECI'):
+    import matplotlib
+    matplotlib.use('agg')
 import matplotlib.pyplot as plt
 from matplotlib.table import Table
 from enum import Enum
 from generate_map_config import Cell, Direction, Turn, CellType
-import os
 
 HOME_DIR = os.environ['HOME']
 CATKIN_WORKSPACE = HOME_DIR + '/catkin_ws/'
@@ -28,6 +35,7 @@ ONE_WAY_ROAD_ON_HIGHWAY_COLOR = 'orange'
 ONE_WAY_ROAD_ON_STREET_COLOR = 'white'
 STREET_STREET_INTERSECTION_COLOR = 'white'
 HIGHWAY_HIGHWAY_INTERSECTION_COLOR = 'green'
+HIGHWAY_STREET_FORK_COLOR = 'olive'
 HIGHWAY_STREET_INTERSECTION_COLOR = 'pink'
 BIN_COLOR = 'black'
 PICKUP_LANE_COLOR = 'yellow'
@@ -80,6 +88,8 @@ def getColor(cell):
         color = HIGHWAY_HIGHWAY_INTERSECTION_COLOR
     elif cell.cellType == CellType.HIGHWAY_STREET_INTERSECTION:
         color = HIGHWAY_STREET_INTERSECTION_COLOR
+    elif cell.cellType == CellType.HIGHWAY_STREET_FORK:
+        color = HIGHWAY_STREET_FORK_COLOR
     elif cell.cellType == CellType.RESTRICTED_AREA:
         color = RESTRICTED_AREA_COLOR
     elif cell.cellType == CellType.CHARGING_AREA:

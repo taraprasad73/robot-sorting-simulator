@@ -8,6 +8,7 @@ jobs:
 
     working_directory: ~/catkin_ws/src/sorting_robot
     
+    # every run step is in a new shell
     steps:
         - run:
             name: Add ROS Kinetic API Keys

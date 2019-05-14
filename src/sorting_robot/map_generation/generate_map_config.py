@@ -18,16 +18,17 @@ class CellType(Enum):
     STREET_STREET_INTERSECTION = 1
     HIGHWAY_HIGHWAY_INTERSECTION = 2
     HIGHWAY_STREET_INTERSECTION = 3
-    ONE_WAY_ROAD_ON_STREET = 4
-    ONE_WAY_ROAD_ON_HIGHWAY = 5
-    RESTRICTED_AREA = 6
-    PICKUP_AREA = 7
-    BOTTOM_PICKUP_LANES = 8
-    CHARGING_AREA = 9
-    CHARGING_LANES = 10
-    TOP_PICKUP_LANES = 11
-    PICKUP_QUEUE_START = 12
-    PICKUP_QUEUE_FINISH = 13
+    HIGHWAY_STREET_FORK = 4
+    ONE_WAY_ROAD_ON_STREET = 5
+    ONE_WAY_ROAD_ON_HIGHWAY = 6
+    RESTRICTED_AREA = 7
+    PICKUP_AREA = 8
+    BOTTOM_PICKUP_LANES = 9
+    CHARGING_AREA = 10
+    CHARGING_LANES = 11
+    TOP_PICKUP_LANES = 12
+    PICKUP_QUEUE_START = 13
+    PICKUP_QUEUE_FINISH = 14
 
 
 class Direction(Enum):
@@ -74,7 +75,6 @@ class Cell:
         self.col = None
         self.directions = set()
         self.allowedTurns = set()
-        self.roadOrientation = None
         self.cellType = cellType
         self.isOnHighway = False
         self.isOnHorizontalHighway = False
@@ -85,8 +85,7 @@ class Cell:
         self.pickupId = 0  # 1 for cells in top pickup region, -1 if cells in bottom pickup region
 
     def setCellType(self, cellType):
-        if self.cellType is None:
-            self.cellType = cellType
+        self.cellType = cellType
 
     def assignCellType(self):
         numDirections = len(self.directions)
@@ -108,24 +107,20 @@ class Cell:
             elif self.isOnHorizontalStreet and self.isOnVerticalStreet:
                 self.setCellType(CellType.STREET_STREET_INTERSECTION)
 
+        # some of the highway street intersections are actually forks
+        if self.cellType == CellType.HIGHWAY_STREET_INTERSECTION:
+            if self.isOnHorizontalHighway and (self.directions == RIGHT_UP_DIRECTIONS or self.directions == LEFT_DOWN_DIRECTIONS):
+                self.setCellType(CellType.HIGHWAY_STREET_FORK)
+            if self.isOnVerticalHighway and (self.directions == UP_LEFT_DIRECTIONS or self.directions == DOWN_RIGHT_DIRECTIONS):
+                self.setCellType(CellType.HIGHWAY_STREET_FORK)
+
     def removeInvalidDirections(self, grid):
-        # # special case for the upper pickup lanes which is not handled by the general logic
+        # special case for the upper pickup lanes which is not handled by the general logic
         if self.cellType == CellType.TOP_PICKUP_LANES:
             if self.directions == LEFT_DOWN_DIRECTIONS:
                 self.directions.remove(Direction.LEFT)
 
-        # special case for highways
-        if self.isOnHighway:
-            if self.roadOrientation == Direction.RIGHT and Direction.DOWN in self.directions:
-                self.directions.remove(Direction.DOWN)
-            elif self.roadOrientation == Direction.LEFT and Direction.UP in self.directions:
-                self.directions.remove(Direction.UP)
-            elif self.roadOrientation == Direction.UP and Direction.RIGHT in self.directions:
-                self.directions.remove(Direction.RIGHT)
-            elif self.roadOrientation == Direction.DOWN and Direction.LEFT in self.directions:
-                self.directions.remove(Direction.LEFT)
-
-        # special case for highway-street intersections
+        # remove directions to prevent switching lanes on highway-street intersections
         if self.cellType == CellType.HIGHWAY_STREET_INTERSECTION:
             if self.isOnHorizontalHighway:
                 if Direction.UP in self.directions:
@@ -297,12 +292,10 @@ def getCenterGrid(r, c, m, n, p, q):
             cell.directions.add(Direction.RIGHT)
             cell.isOnHighway = True
             cell.isOnHorizontalHighway = True
-            cell.roadOrientation = Direction.RIGHT
         for cell in grid[row + 1, :]:
             cell.directions.add(Direction.LEFT)
             cell.isOnHighway = True
             cell.isOnHorizontalHighway = True
-            cell.roadOrientation = Direction.LEFT
 
         # assign the arrows inside the blocks present after the current highway
         for i in range(row + 3, min(row + m + 1, r), 4):
@@ -321,12 +314,10 @@ def getCenterGrid(r, c, m, n, p, q):
             cell.directions.add(Direction.UP)
             cell.isOnHighway = True
             cell.isOnVerticalHighway = True
-            cell.roadOrientation = Direction.UP
         for cell in grid[:, col + 1]:
             cell.directions.add(Direction.DOWN)
             cell.isOnHighway = True
             cell.isOnVerticalHighway = True
-            cell.roadOrientation = Direction.DOWN
 
         # assign the arrows inside the blocks present after the current highway
         for j in range(col + 3, min(col + n + 1, c), 4):
@@ -490,6 +481,7 @@ def generateMapConfig():
     np.save(CONFIG_FILE_SAVE_LOCATION, grid)
 
     '''
+    The pickups dict is going to look like this:
     pickups = {
         1: {'start': (17, 7), 'finish': (17, 1)},
         2: {'start': (17, 18), 'finish': (17, 12)},
