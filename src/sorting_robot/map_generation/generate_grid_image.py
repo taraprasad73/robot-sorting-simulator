@@ -108,16 +108,17 @@ def getColor(cellType):
     return color
 
 
-def createLegend(colorDict):
+def createLegend(colorDict, saveFig):
     fig, ax = plt.subplots()
     ax.set_axis_off()
     coloredLines = [Line2D([0], [0], color=color, lw=8) for color in colorDict.values()]
     cellTypes = [cellType.name for cellType in colorDict.keys()]
     ax.legend(coloredLines, cellTypes)
-    plt.savefig(MAP_LEGEND_FILE_SAVE_LOCATION, format='png', dpi=1200)
+    if saveFig:
+        plt.savefig(MAP_LEGEND_FILE_SAVE_LOCATION, format='png', dpi=1200)
 
 
-def createGridImage(colorDict):
+def createGridImage(colorDict, saveFig):
     mapConfiguration = np.load(CONFIG_FILE_LOCATION).item()
     data = mapConfiguration['grid']
     rows, cols = data.shape[0], data.shape[1]
@@ -149,23 +150,23 @@ def createGridImage(colorDict):
 
     ax.add_table(grid)
 
-    plt.tight_layout(rect=[0.01, 0.01, 0.99, 0.99])
+    if saveFig:
+        plt.tight_layout(rect=[0.01, 0.01, 0.99, 0.99])
+        plt.savefig(MAP_IMAGE_FILE_PNG_SAVE_LOCATION, format='png', dpi=1200)
+        plt.savefig(MAP_IMAGE_FILE_SVG_SAVE_LOCATION, format='svg', dpi=1200)
 
-    plt.savefig(MAP_IMAGE_FILE_PNG_SAVE_LOCATION, format='png', dpi=1200)
-    plt.savefig(MAP_IMAGE_FILE_SVG_SAVE_LOCATION, format='svg', dpi=1200)
 
-
-def generateGridImage():
+def generateGridImage(saveFig=False):
     colorDict = {}
     for cellType in CellType:
         colorDict[cellType] = getColor(cellType)
     try:
-        createGridImage(colorDict)
-        createLegend(colorDict)
+        createGridImage(colorDict, saveFig)
+        createLegend(colorDict, saveFig)
     except IOError:
         print(CONFIG_FILE_LOCATION +
               " doesn't exist. Run the following command to create it:\nrosrun sorting_robot generate_map_config")
 
 
 if __name__ == "__main__":
-    generateGridImage()
+    generateGridImage(saveFig=True)

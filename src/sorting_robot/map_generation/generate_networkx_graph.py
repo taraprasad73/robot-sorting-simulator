@@ -69,7 +69,7 @@ def addEdges(grid, graph):
                                    (row, col, 180), weight=TURN_COST)
 
 
-def generateNetworkxGraph():
+def generateNetworkxGraph(saveFig=False):
     try:
         mapConfiguration = np.load(CONFIG_FILE_LOCATION).item()
         grid = mapConfiguration['grid']
@@ -89,12 +89,13 @@ def generateNetworkxGraph():
                 pos[node] = (center[0], center[1] - CELL_LENGTH)
 
         nx.draw(G, pos=pos, arrowsize=2, node_size=0.1)
-        plt.savefig(GRAPH_IMAGE_FILE_SAVE_LOCATION, dpi=4800)
         nx.write_gpickle(G, GRAPH_PICKLED_FILE_SAVE_LOCATION)
+        if saveFig:
+            plt.savefig(GRAPH_IMAGE_FILE_SAVE_LOCATION, dpi=4800)
     except:
         print(CONFIG_FILE_LOCATION +
               " doesn't exist. Run the following command to create it:\nrosrun sorting_robot generate_map_config")
 
 
 if __name__ == "__main__":
-    generateNetworkxGraph()
+    generateNetworkxGraph(saveFig=True)
