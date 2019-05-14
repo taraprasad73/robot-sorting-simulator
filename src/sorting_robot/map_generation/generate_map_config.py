@@ -76,6 +76,7 @@ class Cell:
         self.directions = set()
         self.allowedTurns = set()
         self.cellType = cellType
+        self.indegree = 0
         self.isOnHighway = False
         self.isOnHorizontalHighway = False
         self.isOnVerticalHighway = False
@@ -195,6 +196,16 @@ class Cell:
                 self.allowedTurns.add(Turn.UP_RIGHT)
             elif self.directions == UP_LEFT_DIRECTIONS:
                 self.allowedTurns.add(Turn.LEFT_UP)
+
+    def setAsRestricted(self):
+        self.cellType = CellType.RESTRICTED_AREA
+        self.directions.clear()
+        self.allowedTurns.clear()
+        self.isOnHighway = False
+        self.isOnHorizontalHighway = False
+        self.isOnVerticalHighway = False
+        self.isOnHorizontalStreet = False
+        self.isOnVerticalStreet = False
 
     def __str__(self):
         return str(self.__dict__)
@@ -333,6 +344,9 @@ def getCenterGrid(r, c, m, n, p, q):
     for row in range(r):
         for col in range(c):
             grid[row][col].assignCellType()
+            # special case for first and last columns, make them restricted
+            if col == 0 or col == c - 1:
+                grid[row][col].setAsRestricted()
     return grid
 
 
@@ -472,6 +486,32 @@ def generateMapConfig():
     for row in range(grid.shape[0]):
         for col in range(grid.shape[1]):
             grid[row][col].removeInvalidDirections(grid)
+
+    # calculate indegree
+    for row in range(grid.shape[0]):
+        for col in range(grid.shape[1]):
+            cell = grid[row][col]
+            for direction in cell.directions:
+                if direction == Direction.LEFT:
+                    p = [row, col - 1]
+                elif direction == Direction.DOWN:
+                    p = [row + 1, col]
+                elif direction == Direction.RIGHT:
+                    p = [row, col + 1]
+                elif direction == Direction.UP:
+                    p = [row - 1, col]
+                neighbourCell = grid[p[0]][p[1]]
+                neighbourCell.indegree += 1
+
+    for row in range(grid.shape[0]):
+        for col in range(grid.shape[1]):
+            cell = grid[row][col]
+            # remove invalid highway-street intersections
+            if cell.cellType == CellType.HIGHWAY_STREET_INTERSECTION and cell.indegree != 2:
+                cell.cellType = CellType.ONE_WAY_ROAD_ON_HIGHWAY
+            # remove invalid highway-street forks
+            if cell.cellType == CellType.HIGHWAY_STREET_FORK and len(cell.directions) != 2:
+                cell.cellType = CellType.ONE_WAY_ROAD_ON_HIGHWAY
 
     for row in range(grid.shape[0]):
         for col in range(grid.shape[1]):
