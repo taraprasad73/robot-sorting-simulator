@@ -1,6 +1,7 @@
 # Map Generation Package
 
 ## Main constraints followed while creating the map
+-----
  - Directions should alternate on neighboring roads. Left should follow right and vice-versa. Up should follow down and vice-versa.
  - Motion should happen on left when on highways.
  - No right turns are allowed when on highways.
@@ -10,6 +11,7 @@
  - The map should be symmetrical horizontally.
 
 ## Input arguments
+-----
 All these arguments have appropriate default values and hence are optional. The values of the arguments should follow the constraints given in the next section.
 ~~~~
   -r                             total number of rows
@@ -25,21 +27,25 @@ All these arguments have appropriate default values and hence are optional. The 
 ~~~~
 
 ## Constraints on the input
-    - m >= 5 and m % 4 == 1
-    - n >= 5 and n % 4 == 1
-    - r >= m + 4
-    - c >= n + 4
-    - 1 <= p <= r - m - 3
-    - 1 <= q <= c - n - 3
-    for  symmetrical map:
-        - p = 1
-        - q = 1
-        - r = (m + 2) * k + 2, for k >= 1
-        - c = (n + 2) * k + 2, for k >= 1
+-----
+~~~~
+  - m >= 5 and m % 4 == 1
+  - n >= 5 and n % 4 == 1
+  - r >= m + 4
+  - c >= n + 4
+  - 1 <= p <= r - m - 3
+  - 1 <= q <= c - n - 3
+  for  symmetrical map:
+      - p = 1
+      - q = 1
+      - r = (m + 2) * k + 2, for k >= 1
+      - c = (n + 2) * k + 2, for k >= 1
+~~~~
 
 ## map_configuration.npy
+-----
 It is a dict containing the following keys
-  - 'grid'                           a 2D grid of _Cell_ objects
+  - 'grid'                            a 2D grid of _Cell_ objects
   - 'pickups'                         a dict containing the starting and ending position of each pickup
   - 'pickup_queue_size'               length of each pickup queue
   - 'num_rows'                        number of rows in the grid
@@ -47,6 +53,7 @@ It is a dict containing the following keys
   - 'cell_length_in_meters'           length of each cell in real world
 
 ## Cell Class
+-----
 - __row__ row number (0-indexed) of the cell
 - __col__ column number (0-indexed) of the cell
 - __cellType__ a member of the enum _CellType_
@@ -58,6 +65,7 @@ It is a dict containing the following keys
   - PICKUP_AREA
 
 ## CellType Enum
+-----
  - RESTRICTED_AREA
  - PARCEL_BIN
  - ONE_WAY_ROAD_ON_STREET

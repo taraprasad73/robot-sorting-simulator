@@ -1,6 +1,7 @@
 # Sorting Robot
 
 ## Installation and setting up the environment
+-----
  - Setup ROS Kinetic and catkin workspace.
     - Add ROS Kinetic API Keys
         ~~~~
@@ -44,13 +45,14 @@
  - Install the package and its dependencies
     ~~~~
     sudo apt-get install python-tk
-    pip install pyyaml empy
+    pip install rospkg pyyaml empy
     pip install -r sorting_robot/requirements.txt
     cd ..
     catkin_make
     ~~~~
 
 ## Understanding the file structure of the package
+-----
  - **/scripts** contains various python scripts, these files are executable and can be executed with rosrun
  - **/nodes** contains various rosnodes, these files are executable and can be executed with rosrun
  - **/src** contains the python packages, these files are used by the files in /scripts and /nodes, and shouldn't be invoked directly
@@ -63,7 +65,7 @@
  - **setup.py** is the equivalent of makefile for python, allows the scripts and nodes to access the python files from /src folder 
  - **/.circleci** contains the yaml file to execute continuous integration tests on CircleCI
 
-## Description of various script files [TODO]
+### Description of various script files [TODO]
 Any script file can be executed as rosrun sorting_robot name_of_script_file [command_line arguments if any]
  - generate_map_config 
  - generate_binary_map
@@ -71,14 +73,14 @@ Any script file can be executed as rosrun sorting_robot name_of_script_file [com
  - generate_networkx_graph
  - generate_spawn_locations
 
-## Description of various rosnode files [TODO]
+### Description of various rosnode files [TODO]
 Any launch file can be executed as rosrun sorting_robot name_of_launch_file [command_line arguments if any]
  - heatmap
  - path_planner
  - visualize_heatmap
  - traffic_manager
 
-## Description of the python packages [TODO]
+### Description of the python packages [TODO]
  - sorting_robot
    - map_generation
    - stdr_initializer
@@ -87,6 +89,7 @@ Any launch file can be executed as rosrun sorting_robot name_of_launch_file [com
    - bfsm
 
 ## Spawn Robots on the STDR simulator
+-----
  - Generate the map configuration file
     ~~~~
     rosrun sorting_robot generate_map_config
@@ -107,6 +110,7 @@ Any launch file can be executed as rosrun sorting_robot name_of_launch_file [com
     ~~~~
 
 ## Code Formatter Settings for Visual Studio Code
+-----
 
 ### Linter standard used
  - **pep8** with E501, E703 and E402 disabled

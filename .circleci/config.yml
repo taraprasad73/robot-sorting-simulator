@@ -45,7 +45,7 @@ jobs:
             name: Install project dependencies
             command: |
                 # sudo apt-get install python-tk
-                pip install pyyaml empy
+                pip install rospkg pyyaml empy
                 pip install -r ~/catkin_ws/src/sorting_robot/requirements.txt
         
         - run:
@@ -84,21 +84,22 @@ jobs:
             command: |
                 source ~/.bashrc
                 rosrun sorting_robot generate_spawn_locations 5
+        
+        # TODO needs roscore and the service to be running
+        # - run: 
+        #     name: Running test test_path_service
+        #     command: |
+        #         source ~/.bashrc
+        #         rosrun sorting_robot test_path_service
 
-        - run: 
-            name: Running test test_path_service
-            command: |
-                source ~/.bashrc
-                rosrun sorting_robot test_path_service
+        # - run: 
+        #     name: Running test test_path_in_pickup_service
+        #     command: |
+        #         source ~/.bashrc
+        #         rosrun sorting_robot test_path_in_pickup_service
 
-        - run: 
-            name: Running test test_path_in_pickup_service
-            command: |
-                source ~/.bashrc
-                rosrun sorting_robot test_path_in_pickup_service
-
-        - run: 
-            name: Running test test_path_to_bin_service
-            command: |
-                source ~/.bashrc
-                rosrun sorting_robot test_path_to_bin_service
+        # - run: 
+        #     name: Running test test_path_to_bin_service
+        #     command: |
+        #         source ~/.bashrc
+        #         rosrun sorting_robot test_path_to_bin_service
