@@ -2,14 +2,14 @@
 
 import sys
 import rospy
-from sorting_robot.srv import Path, PathInPickup, PathToBin
+from sorting_robot.srv import PathToBin
 from sorting_robot.msg import State
 
 
-def getPath(source, destination):
-    rospy.wait_for_service('path')
+def getPathToBin(source, destination):
+    rospy.wait_for_service('path_to_bin')
     try:
-        pathService = rospy.ServiceProxy('path', Path)
+        pathService = rospy.ServiceProxy('path_to_bin', PathToBin)
         response = pathService(source, destination)
         return response.path
     except rospy.ServiceException, e:
@@ -18,6 +18,6 @@ def getPath(source, destination):
 
 
 if __name__ == "__main__":
-    path = getPath(State(27, 48, 180), State(60, 49, 180))
+    path = getPathToBin(State(17, 7, 90), State(row=20, col=6))
     path = [(pose.row, pose.col, pose.direction) for pose in path]
-    print('path service test passed')
+    print('path_to_bin service test passed')

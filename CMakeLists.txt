@@ -181,6 +181,8 @@ install(PROGRAMS
   nodes/path_planner
   nodes/traffic_manager
   tests/test_path_service
+  tests/test_path_to_bin_service
+  tests/test_path_in_pickup_service
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

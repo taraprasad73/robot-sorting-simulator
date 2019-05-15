@@ -1,27 +1,50 @@
 # Sorting Robot
 
-## Setting up the environment
+## Installation and setting up the environment
  - Setup ROS Kinetic and catkin workspace.
+    - Add ROS Kinetic API Keys
+        ~~~~
+        sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
+        sudo apt-key adv --keyserver hkp://ha.pool.sks-keyservers.net:80 --recv-key 421C365BD9FF1F717815A3895523BAEEB01FA116
+        sudo apt-get update
+        ~~~~
+
+    - Install ROS Kinetic
+        ~~~~
+        sudo apt-get install ros-kinetic-ros-base
+        sudo apt install python-rosinstall python-rosinstall-generator python-wstool build-essential
+        ~~~~
+
+    - Initialize rosdep
+        ~~~~
+        sudo rosdep init
+        rosdep update
+        ~~~~
+    - Setup catkin workspace
+        ~~~~
+        sudo apt-get install python-pip
+        pip install catkin_pkg
+        echo "source /opt/ros/kinetic/setup.bash" >> ~/.bashrc
+        mkdir -p ~/catkin_ws/src && cd ~/catkin_ws/ && catkin_make
+        echo "source $HOME/catkin_ws/devel/setup.bash" >> ~/.bashrc
+        ~~~~
+ - Install the STDR simulator
     ~~~~
-    sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
-    sudo apt-key adv --keyserver hkp://ha.pool.sks-keyservers.net:80 --recv-key 421C365BD9FF1F717815A3895523BAEEB01FA116
-    sudo apt-get update
-    sudo apt-get install ros-kinetic-ros-base
-    sudo rosdep init
-    rosdep update
-    echo "source /opt/ros/kinetic/setup.bash" >> ~/.bashrc
-    mkdir -p ~/catkin_ws/src && cd ~/catkin_ws/ && catkin_make
-    echo "source $HOME/catkin_ws/devel/setup.bash" >> ~/.bashrc
+    sudo apt-get install ros-kinetic-stdr-simulator
     ~~~~
- - Install the STDR simulator, refer http://wiki.ros.org/stdr_simulator
- - If your location of catkin workspace is other than $HOME/catkin_ws/ then set a CATKIN_WORKSPACE path variable.
+ - If your location of catkin workspace is other than `$HOME/catkin_ws/`, let's say `$HOME/my_catkin_ws/` then set a CATKIN_WORKSPACE path variable.
     ~~~~
     echo 'export CATKIN_WORKSPACE=$HOME/my_catkin_ws/' >> $HOME/.bashrc
     ~~~~
- - Setup the sorting_robot package.
+ - Clone the sorting_robot package.
     ~~~~
     cd $HOME/catkin_ws/src/
     git clone https://github.com/taraprasad73/sorting_robot
+    ~~~~
+ - Install the package and its dependencies
+    ~~~~
+    sudo apt-get install python-tk
+    pip install pyyaml empy
     pip install -r sorting_robot/requirements.txt
     cd ..
     catkin_make
@@ -34,10 +57,11 @@
  - **/msg** contains message definitions
  - **/srv** contains service definitions
  - **/launch** contains launch files
- - **/data** contains temporary files, this folder is added to .gitignore and hence is not tracked by git
+ - **/data** contains configuration files and images
  - **/stdr_data** contains files needed to launch the stdr simulator
  - **requirements.txt** contains the list of python package dependencies, can be installed through pip
  - **setup.py** is the equivalent of makefile for python, allows the scripts and nodes to access the python files from /src folder 
+ - **/.circleci** contains the yaml file to execute continuous integration tests on CircleCI
 
 ## Description of various script files [TODO]
 Any script file can be executed as rosrun sorting_robot name_of_script_file [command_line arguments if any]
@@ -50,35 +74,37 @@ Any script file can be executed as rosrun sorting_robot name_of_script_file [com
 ## Description of various rosnode files [TODO]
 Any launch file can be executed as rosrun sorting_robot name_of_launch_file [command_line arguments if any]
  - heatmap
+ - path_planner
+ - visualize_heatmap
+ - traffic_manager
 
 ## Description of the python packages [TODO]
  - sorting_robot
    - map_generation
    - stdr_initializer
    - path_planning
-   - traffic_controller
+   - traffic_manager
    - bfsm
 
 ## Spawn Robots on the STDR simulator
-### Generate the map configuration file
-~~~~
-rosrun sorting_robot generate_map_config
+ - Generate the map configuration file
+    ~~~~
+    rosrun sorting_robot generate_map_config
+    ~~~~
+    The output file will be generated in $HOME/catkin_ws/src/sorting_robot/data/ folder.
 
-The output file will be generated in $HOME/catkin_ws/src/sorting_robot/data/ folder.
-~~~~
+ - Generate the spawn locations and execute the script
+    ~~~~
+    rosrun sorting_robot generate_spawn_locations [num_of_robots_to_spawn]
+    chmod +x $HOME/catkin_ws/src/sorting_robot/data/spawn_robots.sh
+    ~~~~
 
-### Generate the spawn locations and execute the script
-~~~~
-rosrun sorting_robot generate_spawn_locations.py [num_of_robots_to_spawn]
-chmod +x $HOME/catkin_ws/src/sorting_robot/data/spawn_robots.sh
-~~~~
-
-### Launch the STDR simulator
-~~~~
-Terminal 1: roscore
-Terminal 2: roslaunch sorting_robot stdr_server_with_map_and_gui.launch
-Terminal 3: bash $HOME/catkin_ws/src/sorting_robot/data/spawn_robots.sh
-~~~~
+ - Launch the STDR simulator
+    ~~~~
+    Terminal 1: roscore
+    Terminal 2: roslaunch sorting_robot stdr_server_with_map_and_gui.launch
+    Terminal 3: bash $HOME/catkin_ws/src/sorting_robot/data/spawn_robots.sh
+    ~~~~
 
 ## Code Formatter Settings for Visual Studio Code
 

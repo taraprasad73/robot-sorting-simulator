@@ -21,7 +21,6 @@ jobs:
             name: Install ROS Kinetic
             command: |
                 sudo apt-get install ros-kinetic-ros-base
-                # sudo apt-get install ros-kinetic-desktop-full
                 sudo apt install python-rosinstall python-rosinstall-generator python-wstool build-essential
 
         - run:
@@ -79,3 +78,27 @@ jobs:
             command: |
                 source ~/.bashrc
                 rosrun sorting_robot generate_networkx_graph
+        
+        - run: 
+            name: Running script generate_spawn_locations
+            command: |
+                source ~/.bashrc
+                rosrun sorting_robot generate_spawn_locations 5
+
+        - run: 
+            name: Running test test_path_service
+            command: |
+                source ~/.bashrc
+                rosrun sorting_robot test_path_service
+
+        - run: 
+            name: Running test test_path_in_pickup_service
+            command: |
+                source ~/.bashrc
+                rosrun sorting_robot test_path_in_pickup_service
+
+        - run: 
+            name: Running test test_path_to_bin_service
+            command: |
+                source ~/.bashrc
+                rosrun sorting_robot test_path_to_bin_service

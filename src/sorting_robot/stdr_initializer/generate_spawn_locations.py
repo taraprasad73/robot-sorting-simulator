@@ -1,9 +1,9 @@
-import numpy as np
-from ..map_generation.generate_map_config import Cell, Direction, Turn, CellType
-from random import shuffle
+import os
 import math
 import argparse
-import os
+import numpy as np
+from random import shuffle
+from ..map_generation.generate_map_config import Cell, Direction, Turn, CellType
 
 HOME_DIR = os.environ['HOME']
 CATKIN_WORKSPACE = HOME_DIR + '/catkin_ws/'
