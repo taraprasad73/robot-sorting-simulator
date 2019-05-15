@@ -2,8 +2,28 @@
 
 import sys
 import rospy
-from sorting_robot.srv import Path
+from sorting_robot.srv import Path, PathInPickup, PathToBin
 from sorting_robot.msg import State
+
+
+def getPathToBin(source, destination):
+    rospy.wait_for_service('path_to_bin')
+    try:
+        pathService = rospy.ServiceProxy('path_to_bin', PathToBin)
+        response = pathService(source, destination)
+        return response.path
+    except rospy.ServiceException, e:
+        print "Service call failed: %s" % e
+
+
+def getPathInPickup(source):
+    rospy.wait_for_service('path_in_pickup')
+    try:
+        pathService = rospy.ServiceProxy('path_in_pickup', PathInPickup)
+        response = pathService(source)
+        return response.path
+    except rospy.ServiceException, e:
+        print "Service call failed: %s" % e
 
 
 def getPath(source, destination):
@@ -17,8 +37,17 @@ def getPath(source, destination):
 
 
 if __name__ == "__main__":
-    source = State(27, 48, 180)
-    destination = State(60, 49, 180)
-    path = getPath(source, destination)
-    path = [(pose.row, pose.col, pose.direction) for pose in path]
-    print(path)
+    path = getPath(State(27, 48, 180), State(60, 49, 180))
+    if path is not None:
+        path = [(pose.row, pose.col, pose.direction) for pose in path]
+        print('path service test passed')
+
+    path = getPathInPickup(State(row=17, col=7))
+    if path is not None:
+        path = [(pose.row, pose.col, pose.direction) for pose in path]
+        print('path_in_pickup service test passed')
+
+    path = getPathToBin(State(17, 7, 90), State(row=20, col=6))
+    if path is not None:
+        path = [(pose.row, pose.col, pose.direction) for pose in path]
+        print('path_to_bin service test passed')

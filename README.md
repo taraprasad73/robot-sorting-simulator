@@ -83,7 +83,7 @@ Terminal 3: bash $HOME/catkin_ws/src/sorting_robot/data/spawn_robots.sh
 ## Code Formatter Settings for Visual Studio Code
 
 ### Linter standard used
- - **pep8** with E501 and E703 disabled
+ - **pep8** with E501, E703 and E402 disabled
  - **E501** - places a limit on the length of a line of code
  - **E703** - doesn't allow semicolon at the end of a statement
  - **E402** - forces module level import at top of file

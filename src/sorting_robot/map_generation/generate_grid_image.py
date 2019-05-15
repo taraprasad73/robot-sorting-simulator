@@ -118,9 +118,7 @@ def createLegend(colorDict, saveFig):
         plt.savefig(MAP_LEGEND_FILE_SAVE_LOCATION, format='png', dpi=1200)
 
 
-def createGridImage(colorDict, saveFig):
-    mapConfiguration = np.load(CONFIG_FILE_LOCATION).item()
-    data = mapConfiguration['grid']
+def createGridImage(data, colorDict, saveFig):
     rows, cols = data.shape[0], data.shape[1]
     width, height = 1.5 / cols, 1.5 / rows
     fig, ax = plt.subplots()
@@ -161,7 +159,9 @@ def generateGridImage(saveFig=False):
     for cellType in CellType:
         colorDict[cellType] = getColor(cellType)
     try:
-        createGridImage(colorDict, saveFig)
+        mapConfiguration = np.load(CONFIG_FILE_LOCATION).item()
+        data = mapConfiguration['grid']
+        createGridImage(data, colorDict, saveFig)
         createLegend(colorDict, saveFig)
     except IOError:
         print(CONFIG_FILE_LOCATION +
