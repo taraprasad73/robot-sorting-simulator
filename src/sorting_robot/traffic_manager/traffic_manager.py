@@ -386,33 +386,34 @@ class TrafficManager:
 
 	def visualize(self):
 		rows, cols = self.data.shape[0], self.data.shape[1];
-		enlarge_ratio = 1;
-		image = np.zeros((rows * enlarge_ratio, cols * enlarge_ratio, 3), dtype='uint8');
+		colors = dict();
+		colors["GREEN"] = np.array([0,255,0]);
+		colors["RED"] = np.array([255,0,0]);
+		colors["YELLOW"] = np.array([255,255,0]);
+		image = np.zeros((rows, cols, 3), dtype='uint8');
 		# Traffic: Horizontal is green and Traffic Vertical is red
-		#plt.show();
+		plt.show();
 		while not rospy.is_shutdown():
 			for i in range(0, rows):
 				for j in range(0, cols):
 					if(self.data[i][j].cellType == CellType.STREET_STREET_INTERSECTION):
 						signal = self.traffic_signals[(i, j)].get_signal();
 						if(signal.left==True or signal.right==True):
-							print('yo1');
-							image[i * enlarge_ratio:(i + 1) * enlarge_ratio][j * enlarge_ratio:(j + 1) * enlarge_ratio] = np.array([0, 255, 0]);
+							image[i][j] = colors["GREEN"];
 						else:
-							print('yo2');
-							image[i * enlarge_ratio:(i + 1) * enlarge_ratio][j * enlarge_ratio:(j + 1) * enlarge_ratio] = np.array([255, 0, 0]);
+							image[i][j] = colors["RED"];
 					elif(self.data[i][j].cellType == CellType.HIGHWAY_HIGHWAY_INTERSECTION):
 						signal = self.traffic_signals[(i, j)].get_signal();
 						if(signal.left==True):
-							image[i * enlarge_ratio:(i + 1) * enlarge_ratio][j * enlarge_ratio:(j + 1) * enlarge_ratio] = np.array([0, 255, 0]);
+							image[i][j] = colors["GREEN"];
 						else:
-							image[i * enlarge_ratio:(i + 1) * enlarge_ratio][j * enlarge_ratio:(j + 1) * enlarge_ratio] = np.array([255, 0, 0]);
+							image[i][j] = colors["RED"];
 					elif(self.data[i][j].cellType == CellType.HIGHWAY_STREET_INTERSECTION):
 						signal = self.traffic_signals[(i, j)].get_signal();
 						if(signal.left==True or signal.right==True):
-							image[i * enlarge_ratio:(i + 1) * enlarge_ratio][j * enlarge_ratio:(j + 1) * enlarge_ratio] = np.array([0, 255, 0]);
+							image[i][j] = colors["GREEN"];
 						else:
-							image[i * enlarge_ratio:(i + 1) * enlarge_ratio][j * enlarge_ratio:(j + 1) * enlarge_ratio] = np.array([255, 0, 0]);		
+							image[i][j] = colors["RED"];
 			plt.imshow(image);
 			plt.draw();
 			plt.pause(1e-17);
