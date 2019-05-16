@@ -336,8 +336,22 @@ class TrafficManager:
 		self.service = rospy.Service('/traffic', TrafficService, self.get_traffic_signal);
 
 	def get_traffic_signal(self, req):
-		x, y = req.location.row, req.location.col;
-		return self.traffic_signals[(x, y)].get_signal();
+		x,y = req.location.row,req.location.col;
+		if(self.data[x][y].cellType == HIGHWAY_HIGHWAY_INTERSECTION):
+			signal = self.traffic_signals[(x, y)].get_signal();
+			if(signal.left==True and signal.right==True):
+				if(Direction.LEFT in self.data[x][y].directions):
+					signal.right = False;
+				else:
+					signal.left = False;
+			elif(signal.up==True and signal.down==True):
+				if(Direction.UP in self.data[x][y].directions):
+					signal.down = False;
+				else:
+					signal.up = False;
+			return signal;
+		else:
+			return self.traffic_signals[(x, y)].get_signal();
 
 	def map_callback(self):
 		global occupancy_map;
