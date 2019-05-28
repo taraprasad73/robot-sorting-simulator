@@ -34,15 +34,6 @@ def getRandomFreePoints(count, cells, grid):
     return result
 
 
-def convertCellsToVector(freeCells):
-    csm = CoordinateSpaceManager()
-    result = []
-    for cell in freeCells:
-        vector = csm.convertCellToVector(cell)
-        result.append(vector)
-    return result
-
-
 def generateSpawnLocations(numberOfLocations):
     try:
         mapConfiguration = np.load(CONFIG_FILE_LOCATION).item()
@@ -54,7 +45,10 @@ def generateSpawnLocations(numberOfLocations):
         cells = [(r, c) for r in range(grid.shape[0])
                  for c in range(grid.shape[1])]
         freeCells = getRandomFreePoints(numberOfLocations, cells, grid)
-        points = convertCellsToVector(freeCells)
+        csm = CoordinateSpaceManager()
+        points = []
+        for cell in freeCells:
+            points.append(csm.getWorldCoordinateWithDirection(cell))
 
         with open(GENERATED_SCRIPT_FILE, "w") as f:
             for point in points:
