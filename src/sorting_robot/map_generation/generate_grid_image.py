@@ -155,17 +155,18 @@ def createGridImage(data, colorDict, saveFig):
 
 
 def generateGridImage(saveFig=False):
-    colorDict = {}
-    for cellType in CellType:
-        colorDict[cellType] = getColor(cellType)
     try:
         mapConfiguration = np.load(CONFIG_FILE_LOCATION).item()
-        data = mapConfiguration['grid']
-        createGridImage(data, colorDict, saveFig)
-        createLegend(colorDict, saveFig)
     except IOError:
         print(CONFIG_FILE_LOCATION +
               " doesn't exist. Run the following command to create it:\nrosrun sorting_robot generate_map_config")
+    else:
+        colorDict = {}
+        for cellType in CellType:
+            colorDict[cellType] = getColor(cellType)
+        data = mapConfiguration['grid']
+        createGridImage(data, colorDict, saveFig)
+        createLegend(colorDict, saveFig)
 
 
 if __name__ == "__main__":

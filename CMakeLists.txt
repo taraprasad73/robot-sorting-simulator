@@ -183,6 +183,7 @@ install(PROGRAMS
   tests/test_path_service
   tests/test_path_to_bin_service
   tests/test_path_in_pickup_service
+  tests/test_coordinate_space_manager
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

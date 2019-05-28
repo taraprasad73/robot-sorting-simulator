@@ -2,7 +2,7 @@
 
 import sys
 import rospy
-from sorting_robot.srv import Path, PathInPickup, PathToBin
+from sorting_robot.srv import Path
 from sorting_robot.msg import State
 
 
@@ -20,4 +20,5 @@ def getPath(source, destination):
 if __name__ == "__main__":
     path = getPath(State(27, 48, 180), State(60, 49, 180))
     path = [(pose.row, pose.col, pose.direction) for pose in path]
+    print(path)
     print('path service test passed')

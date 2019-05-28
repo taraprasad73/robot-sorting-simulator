@@ -25,6 +25,10 @@ def saveDataToImage(data, filename):
 def generateBinaryMap(pixelToCellRatio):
     try:
         mapConfiguration = np.load(CONFIG_FILE_LOCATION).item()
+    except IOError:
+        print(CONFIG_FILE_LOCATION +
+              " doesn't exist. Run the following command to create it:\nrosrun sorting_robot generate_map_config")
+    else:
         grid = mapConfiguration['grid']
         enlargedBinaryGrid = np.ones(
             (grid.shape[0] * pixelToCellRatio, grid.shape[1] * pixelToCellRatio), dtype=bool)
@@ -36,9 +40,6 @@ def generateBinaryMap(pixelToCellRatio):
                         row + 1) * pixelToCellRatio, col * pixelToCellRatio: (col + 1) * pixelToCellRatio] = False
 
         saveDataToImage(enlargedBinaryGrid, BINARY_GRID_IMAGE_LOCATION)
-    except IOError:
-        print(CONFIG_FILE_LOCATION +
-              " doesn't exist. Run the following command to create it:\nrosrun sorting_robot generate_map_config")
 
 
 if __name__ == '__main__':

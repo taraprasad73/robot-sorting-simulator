@@ -1,9 +1,9 @@
 import os
-import math
 import argparse
 import numpy as np
 from random import shuffle
-from ..map_generation.generate_map_config import Cell, Direction, Turn, CellType
+from ..map_generation.generate_map_config import Cell
+from ..utils import CoordinateSpaceManager
 
 HOME_DIR = os.environ['HOME']
 CATKIN_WORKSPACE = HOME_DIR + '/catkin_ws/'
@@ -34,48 +34,31 @@ def getRandomFreePoints(count, cells, grid):
     return result
 
 
-def directionToRadians(direction):
-    if direction == Direction.LEFT:
-        return math.radians(180)
-    elif direction == Direction.RIGHT:
-        return math.radians(0)
-    elif direction == Direction.UP:
-        return math.radians(90)
-    elif direction == Direction.DOWN:
-        return math.radians(270)
-
-
-def convertCellsToCoordinates(freeCells, grid, cellLength):
+def convertCellsToVector(freeCells):
+    csm = CoordinateSpaceManager()
     result = []
-    RANGE_Y = grid.shape[0] * cellLength
-    for (r, c) in freeCells:
-        x = (c + 0.5) * cellLength
-        y = (r + 0.5) * cellLength
-        y = RANGE_Y - y
-        if len(grid[r][c].directions) == 0:
-            raise RuntimeError(
-                "cell ({}, {}) doesn't have a direction.".format(r, c))
-        theta = directionToRadians(grid[r][c].directions.pop())
-        result.append((x, y, theta))
+    for cell in freeCells:
+        vector = csm.convertCellToVector(cell)
+        result.append(vector)
     return result
 
 
 def generateSpawnLocations(numberOfLocations):
     try:
         mapConfiguration = np.load(CONFIG_FILE_LOCATION).item()
+    except IOError:
+        print(CONFIG_FILE_LOCATION +
+              " doesn't exist. Run the following command to create it:\nrosrun sorting_robot generate_map_config")
+    else:
         grid = mapConfiguration['grid']
-        cellLength = mapConfiguration['cell_length_in_meters']
         cells = [(r, c) for r in range(grid.shape[0])
                  for c in range(grid.shape[1])]
         freeCells = getRandomFreePoints(numberOfLocations, cells, grid)
-        points = convertCellsToCoordinates(freeCells, grid, cellLength)
+        points = convertCellsToVector(freeCells)
 
         with open(GENERATED_SCRIPT_FILE, "w") as f:
             for point in points:
                 f.write(ADD_ROBOT_TEMPLATE.format(*point))
-    except IOError:
-        print(CONFIG_FILE_LOCATION +
-              " doesn't exist. Run the following command to create it:\nrosrun sorting_robot generate_map_config")
 
 
 if __name__ == "__main__":

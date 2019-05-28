@@ -48,7 +48,6 @@ def handlePathInPickupRequest(req):
     if pickupQueueNodes.get(pickupStart):
         nodes = pickupQueueNodes[pickupStart]
     nodes = [State(*node) for node in nodes]
-    print type(nodes)
     return PathResponse(path=nodes)
 
 
@@ -62,7 +61,7 @@ def getPathResponse(sourceNode, targetNode):
             print("No path between {} and {}".format(sourceNode, targetNode))
     else:
         print("Either {} or {} doesn't exist as a node in graph".format(sourceNode, targetNode))
-    print type(nodesInPath)
+    print(nodesInPath)
     return PathResponse(path=nodesInPath)
 
 
@@ -72,7 +71,6 @@ def handlePathToBinRequest(req):
     sourceNode = (source.row, source.col, source.direction)
     binNode = (bin_position.row, bin_position.col)
 
-    pathResponse = PathResponse(path=[])
     if sourceNode in G and binNode in G:
         pathLengths = {}
         for neighbourNode in G[binNode]:
@@ -81,11 +79,15 @@ def handlePathToBinRequest(req):
                 pathLengths[neighbourNode] = pathLength
             except nx.NetworkXNoPath:
                 print("No path between {} and {}".format(sourceNode, neighbourNode))
-        nearestNode = min(pathLengths, key=pathLengths.get)
-        pathResponse = getPathResponse(sourceNode, nearestNode)
+        if len(pathLengths) > 0:
+            nearestNode = min(pathLengths, key=pathLengths.get)
+            print("Calculating path...")
+            return getPathResponse(sourceNode, nearestNode)
+        else:
+            print("No path to reach the bin {} from {}".format(binNode, sourceNode))
     else:
         print("Either {} or {} doesn't exist as a node in graph".format(sourceNode, binNode))
-    return pathResponse
+    return None
 
 
 def handlePathRequest(req):
@@ -100,8 +102,16 @@ def pathPlanner():
     try:
         global G
         G = nx.read_gpickle(GRAPH_PICKLED_FILE_LOCATION)
+    except IOError:
+        print(GRAPH_PICKLED_FILE_LOCATION +
+              " doesn't exist. Run the following command to create it:\nrosrun sorting_robot generate_networkx_graph")
+    else:
         try:
             mapConfiguration = np.load(CONFIG_FILE_LOCATION).item()
+        except IOError:
+            print(CONFIG_FILE_LOCATION +
+                  " doesn't exist. Run the following command to create it:\nrosrun sorting_robot generate_map_config")
+        else:
             pickups = mapConfiguration['pickups']
 
             global pickupQueueNodes
@@ -112,18 +122,12 @@ def pathPlanner():
                 pickupQueueNodes[pickupLocations['start']] = nx.astar_path(G, startNode, finishNode)
 
             rospy.init_node('path_planning_server')
-            pathService = rospy.Service('path', Path, handlePathRequest)
+            # pathService = rospy.Service('path', Path, handlePathRequest)
             pathToBinService = rospy.Service('path_to_bin', PathToBin, handlePathToBinRequest)
-            pathInPickupService = rospy.Service('path_in_pickup', PathInPickup, handlePathInPickupRequest)
+            # pathInPickupService = rospy.Service('path_in_pickup', PathInPickup, handlePathInPickupRequest)
 
             print('path planning server is running...')
             rospy.spin()
-        except IOError:
-            print(CONFIG_FILE_LOCATION +
-                  " doesn't exist. Run the following command to create it:\nrosrun sorting_robot generate_map_config")
-    except IOError:
-        print(GRAPH_PICKLED_FILE_LOCATION +
-              " doesn't exist. Run the following command to create it:\nrosrun sorting_robot generate_networkx_graph")
 
 
 if __name__ == "__main__":

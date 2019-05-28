@@ -1,11 +1,12 @@
 import argparse;
 import rospy;
 import re;
-import numpy as np;
 import os;
+import numpy as np;
 from geometry_msgs.msg import Pose;
 from nav_msgs.msg import Odometry;
 from sorting_robot.msg import HeatMap, OccupancyMap;
+from ..utils import CoordinateSpaceManager, RobotInfo
 
 HOME_DIR = os.environ['HOME']
 CATKIN_WORKSPACE = HOME_DIR + '/catkin_ws/'
@@ -16,17 +17,11 @@ CONFIG_FILE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/map_configura
 HEATMAP_PUBLISH_RATE = 1;
 
 
-def convertCoordinatesToCells(point, gridShape, cellLength):
-    col = int(point.x // cellLength);
-    row = gridShape[0] - int(point.y // cellLength) - 1;
-    return row, col;
-
-
 class Heatmap:
-    def __init__(self, numRows, numColumns, cellLength):
+    def __init__(self, numRows, numColumns):
         rospy.init_node('heatmap', anonymous=False);
+        self.csm = CoordinateSpaceManager()
         self.gridShape = (numRows, numColumns);
-        self.cellLength = cellLength;
         self.heatmapPublisher = rospy.Publisher('/heat_map', HeatMap, queue_size=10);
         self.occupancyPublisher = rospy.Publisher('/occupancy_map', OccupancyMap, queue_size=10);
         self.subscribers = [];
@@ -54,9 +49,10 @@ class Heatmap:
         occupancyMap = np.zeros(self.gridShape, dtype=bool);
         new_map = np.zeros(self.gridShape);
         for key in self.positions.keys():
-            x, y = convertCoordinatesToCells(self.positions[key].position, self.gridShape, self.cellLength);
-            new_map[x][y] = 1;
-            occupancyMap[x][y] = True;
+            point = (self.positions[key].position.x, self.positions[key].position.y)
+            r, c = self.csm.convertPointToCell(point);
+            new_map[r][c] = 1;
+            occupancyMap[r][c] = True;
         final_map = self.eta * self.previousMap + (1 - self.eta) * new_map;
         self.previousMap = final_map;
         return occupancyMap, final_map;
@@ -66,18 +62,21 @@ class Heatmap:
         while not rospy.is_shutdown():
             occupancyMap, heatmap = self.getHeatmap();
             self.heatmapPublisher.publish(heat_values=heatmap.flatten(), rows=self.gridShape[0], columns=self.gridShape[1]);
-            self.occupancyPublisher.publish(occupancy_values=occupancyMap.flatten(), rows=self.gridShape[0], cols=self.gridShape[1]);
+            self.occupancyPublisher.publish(occupancy_values=occupancyMap.flatten(), rows=self.gridShape[0], columns=self.gridShape[1]);
             rate.sleep();
 
 
 def calculateHeatmap():
     try:
         mapConfiguration = np.load(CONFIG_FILE_LOCATION).item();
-        heatmap = Heatmap(mapConfiguration['num_rows'], mapConfiguration['num_columns'], mapConfiguration['cell_length_in_meters']);
-        heatmap.run();
     except IOError:
         print(CONFIG_FILE_LOCATION +
               " doesn't exist. Run the following command to create it:\nrosrun sorting_robot generate_map_config");
+    else:
+        print(RobotInfo.getRobotRadiusInMeters())
+        heatmap = Heatmap(mapConfiguration['num_rows'], mapConfiguration['num_columns']);
+        print('Heatmap node is running...')
+        heatmap.run();
 
 
 if __name__ == "__main__":

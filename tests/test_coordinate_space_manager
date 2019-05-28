@@ -1,0 +1,9 @@
+#!/usr/bin/env python
+
+from sorting_robot.utils import CoordinateSpaceManager
+
+if __name__ == "__main__":
+    csm = CoordinateSpaceManager()
+    print(csm.convertCellToPoint((9, 1)))
+    print(csm.convertCellToVector((9, 1)))
+    print(csm.convertPointToCell(csm.convertCellToPoint((9, 1))))

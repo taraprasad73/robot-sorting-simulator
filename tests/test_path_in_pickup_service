@@ -11,6 +11,11 @@ def getPathInPickup(source):
     try:
         pathService = rospy.ServiceProxy('path_in_pickup', PathInPickup)
         response = pathService(source)
+        if response is None:
+            print('Received None response')
+        print(type(response))
+        print(response)
+        print(response.path)
         return response.path
     except rospy.ServiceException, e:
         print "Service call failed: %s" % e
