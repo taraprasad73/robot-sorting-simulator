@@ -50,9 +50,10 @@ class Heatmap:
         new_map = np.zeros(self.gridShape);
         for key in self.positions.keys():
             point = (self.positions[key].position.x, self.positions[key].position.y)
-            r, c = self.csm.convertPointToCell(point);
-            new_map[r][c] = 1;
-            occupancyMap[r][c] = True;
+            cells = self.csm.convertPointToCells(point);
+            for (r, c) in cells:
+                new_map[r][c] = 1;
+                occupancyMap[r][c] = True;
         final_map = self.eta * self.previousMap + (1 - self.eta) * new_map;
         self.previousMap = final_map;
         return occupancyMap, final_map;
@@ -73,7 +74,6 @@ def calculateHeatmap():
         print(CONFIG_FILE_LOCATION +
               " doesn't exist. Run the following command to create it:\nrosrun sorting_robot generate_map_config");
     else:
-        print(RobotInfo.getRobotRadiusInMeters())
         heatmap = Heatmap(mapConfiguration['num_rows'], mapConfiguration['num_columns']);
         print('Heatmap node is running...')
         heatmap.run();
