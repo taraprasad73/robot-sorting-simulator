@@ -5,8 +5,8 @@ if os.environ.get('CIRCLECI'):
     import matplotlib
     matplotlib.use('agg')
 import matplotlib.pyplot as plt
+from matplotlib.patches import ArrowStyle
 from generate_map_config import Cell, Direction, Turn, CellType
-
 
 HOME_DIR = os.environ['HOME']
 CATKIN_WORKSPACE = HOME_DIR + '/catkin_ws/'
@@ -19,7 +19,7 @@ GRAPH_IMAGE_FILE_SAVE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/gra
 TURN_COST = 50
 MOVE_COST = 20
 
-CELL_LENGTH = 200
+CELL_LENGTH = 2
 
 
 def addEdges(grid, graph):
@@ -100,20 +100,21 @@ def generateNetworkxGraph(saveFig=False):
             cell = grid[node[0]][node[1]]
             if cell.cellType != CellType.PARCEL_BIN and len(cell.directions) > 1:
                 if node[2] == 0:
-                    pos[node] = (center[0] + CELL_LENGTH, center[1])
+                    pos[node] = (center[0] + 0.5 * CELL_LENGTH, center[1])
                 elif node[2] == 90:
-                    pos[node] = (center[0], center[1] + CELL_LENGTH)
+                    pos[node] = (center[0], center[1] + 0.5 * CELL_LENGTH)
                 elif node[2] == 180:
-                    pos[node] = (center[0] - CELL_LENGTH, center[1])
+                    pos[node] = (center[0] - 0.5 * CELL_LENGTH, center[1])
                 elif node[2] == 270:
-                    pos[node] = (center[0], center[1] - CELL_LENGTH)
+                    pos[node] = (center[0], center[1] - 0.5 * CELL_LENGTH)
             else:
                 pos[node] = center
 
-        nx.draw(G, pos=pos, arrowsize=2, node_size=0.1)
         nx.write_gpickle(G, GRAPH_PICKLED_FILE_SAVE_LOCATION)
         if saveFig:
-            plt.savefig(GRAPH_IMAGE_FILE_SAVE_LOCATION, dpi=4800)
+            plt.axes().set_aspect('auto')
+            nx.draw(G, pos=pos, node_size=0.005, width=0.25, arrowstyle=ArrowStyle.CurveB(head_length=.05, head_width=.05))
+            plt.savefig(GRAPH_IMAGE_FILE_SAVE_LOCATION, dpi=1200)
 
 
 if __name__ == "__main__":
