@@ -17,4 +17,9 @@ if __name__ == '__main__':
     if os.environ.get('CIRCLECI'):
         generateGridImage(saveFig=False)
     else:
-        generateGridImage(saveFig=parseArgs())
+        saveFig = parseArgs()
+        if saveFig:
+            generateGridImage(saveFig=True, imageFormat='png')
+            generateGridImage(saveFig=True, imageFormat='svg')
+        else:
+            generateGridImage(saveFig=False)
