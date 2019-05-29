@@ -45,14 +45,16 @@ class CoordinateSpaceManager:
             self.grid = mapConfiguration['grid']
 
     # input: x, y, theta
-    # theta is a radian, can correspond to any value between 0 and 360, not necessarily the 4 directions
+    # theta is in radians, can correspond to any value between -180 and 180 degrees
     def convertPointToState(self, point):
         x, y, theta = point[0], point[1], point[2]
-        theta = math.degrees(theta)
         col = int(x // self.cellLength)
         row = self.numRowsInGrid - int(y // self.cellLength) - 1
+
+        theta = math.degrees(theta) + 180
+        # check cyclic cases properly
         direction = None
-        if 0 - ORIENTATION_TOLERANCE < theta < 0 + ORIENTATION_TOLERANCE:
+        if 360 - ORIENTATION_TOLERANCE < theta <= 360 and 0 <= theta < 0 + ORIENTATION_TOLERANCE:
             direction = 0
         elif 90 - ORIENTATION_TOLERANCE < theta < 90 + ORIENTATION_TOLERANCE:
             direction = 90
@@ -92,7 +94,9 @@ class CoordinateSpaceManager:
                 cells.append((row - 1, col))
         return cells
 
-    # returns the coordinates of the mid point of the cell in world coordinates, in some arbitrary valid direction
+    # returns the coordinates of the mid point of the cell in world coordinates
+    # direction is set to some arbitrary valid direction if none given
+    # if no valid direction available, it is set to None
     def getWorldCoordinateWithDirection(self, cell):
         r, c = cell[0], cell[1]
         theta = None
