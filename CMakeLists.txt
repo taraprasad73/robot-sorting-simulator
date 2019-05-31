@@ -180,6 +180,8 @@ install(PROGRAMS
   nodes/visualize_heatmap
   nodes/path_planner
   nodes/traffic_manager
+  nodes/bfsm
+  nodes/controller
   tests/test_path_service
   tests/test_path_to_bin_service
   tests/test_path_in_pickup_service
