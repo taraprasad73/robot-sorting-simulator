@@ -1,3 +1,5 @@
 *.pyc
 .vscode/
-data/spawn_robots.sh
+data/spawn_robots_on_map.sh
+data/spawn_robots_on_small_map.sh
+data/heatmap/

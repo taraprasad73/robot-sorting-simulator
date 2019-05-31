@@ -1,4 +1,4 @@
-image: binary_grid.png
+image: small_map_binary_grid.png
 resolution: 0.01
 origin: [-19.000000, -19.000000, 0.000000]
 occupied_thresh: 0.6

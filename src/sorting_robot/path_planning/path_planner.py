@@ -7,7 +7,8 @@ import networkx as nx
 import numpy as np
 import rospy
 from sorting_robot.msg import State
-from sorting_robot.srv import *
+from sorting_robot.srv import Path, PathToBin
+from ..utils import RobotInfo
 
 HOME_DIR = os.environ['HOME']
 CATKIN_WORKSPACE = HOME_DIR + '/catkin_ws/'
@@ -16,6 +17,9 @@ if os.environ.get('CATKIN_WORKSPACE'):
 CONFIG_FILE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/map_configuration.npy'
 ANNOTATED_GRAPH_IMAGE_FILE_SAVE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/annotated_graph.svg'
 GRAPH_PICKLED_FILE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/graph.gpickle'
+
+TURN_PENALTY = 1.2
+HEATMAP_PENALTY = 1
 
 
 def drawPath(self, nodesInPath):
@@ -37,18 +41,20 @@ def drawPath(self, nodesInPath):
     plt.savefig(ANNOTATED_GRAPH_IMAGE_FILE_SAVE_LOCATION, dpi=4800)
 
 
+def updateWeights(data):
+    heatmap = np.reshape(data.heat_values, (data.rows, data.columns))
+    for u, v, d in G.edges(data=True):
+        if d.get('weight') is not None:
+            timeToMove = (abs(u[0] - v[0]) + abs(u[1] - v[1])) / RobotInfo.getAverageLinearSpeed()
+            timeToTurn = abs(u[2] - v[2]) / RobotInfo.getAverageLinearSpeed()
+            d['weight'] = timeToMove + timeToTurn * TURN_PENALTY + (1 + HEATMAP_PENALTY * heatmap[v[0]][v[1]])
+
+
 def heuristic(self, currentNode, targetNode):
-    pass
-
-
-def handlePathInPickupRequest(req):
-    source = req.source
-    pickupStart = (source.row, source.col)
-    nodes = []
-    if pickupQueueNodes.get(pickupStart):
-        nodes = pickupQueueNodes[pickupStart]
-    nodes = [State(*node) for node in nodes]
-    return PathResponse(path=nodes)
+    timeToMove = (abs(currentNode[0] - targetNode[0]) + abs(currentNode[1] - targetNode[1])) / RobotInfo.getAverageLinearSpeed()
+    timeToTurn = abs(currentNode[2] - targetNode[2]) / RobotInfo.getAverageLinearSpeed()
+    estimatedPathCost = timeToMove + timeToTurn * TURN_PENALTY
+    return estimatedPathCost
 
 
 def getPathResponse(sourceNode, targetNode):
@@ -112,20 +118,10 @@ def pathPlanner():
             print(CONFIG_FILE_LOCATION +
                   " doesn't exist. Run the following command to create it:\nrosrun sorting_robot generate_map_config")
         else:
-            pickups = mapConfiguration['pickups']
-
-            global pickupQueueNodes
-            pickupQueueNodes = {}
-            for pickupLocations in pickups.values():
-                startNode = [node for node in G.nodes() if node[0: 2] == pickupLocations['start']][0]
-                finishNode = [node for node in G.nodes() if node[0: 2] == pickupLocations['finish']][0]
-                pickupQueueNodes[pickupLocations['start']] = nx.astar_path(G, startNode, finishNode)
-
             rospy.init_node('path_planning_server')
-            # pathService = rospy.Service('path', Path, handlePathRequest)
+            rospy.Subscriber('heat_map', HeatMap, updateWeights)
+            pathService = rospy.Service('path', Path, handlePathRequest)
             pathToBinService = rospy.Service('path_to_bin', PathToBin, handlePathToBinRequest)
-            # pathInPickupService = rospy.Service('path_in_pickup', PathInPickup, handlePathInPickupRequest)
-
             print('path planning server is running...')
             rospy.spin()
 

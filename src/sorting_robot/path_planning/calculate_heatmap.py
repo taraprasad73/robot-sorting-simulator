@@ -12,22 +12,22 @@ HOME_DIR = os.environ['HOME']
 CATKIN_WORKSPACE = HOME_DIR + '/catkin_ws/'
 if os.environ.get('CATKIN_WORKSPACE'):
     CATKIN_WORKSPACE = os.environ['CATKIN_WORKSPACE']
-CONFIG_FILE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/map_configuration.npy'
+CONFIG_FILE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/{}_configuration.npy'
 
 HEATMAP_PUBLISH_RATE = 1;
 
 
 class Heatmap:
-    def __init__(self, numRows, numColumns):
+    def __init__(self, mapName, numRows, numColumns):
         rospy.init_node('heatmap', anonymous=False);
-        self.csm = CoordinateSpaceManager()
+        self.csm = CoordinateSpaceManager(mapName)
         self.gridShape = (numRows, numColumns);
         self.heatmapPublisher = rospy.Publisher('/heat_map', HeatMap, queue_size=10);
         self.occupancyPublisher = rospy.Publisher('/occupancy_map', OccupancyMap, queue_size=10);
         self.subscribers = [];
         self.positions = {};
         self.findTopics();
-        self.eta = 0.1;
+        self.eta = 0.3;
         self.previousMap = np.zeros((numRows, numColumns));
 
     def callback(self, data, name):
@@ -54,7 +54,7 @@ class Heatmap:
             for (r, c) in cells:
                 new_map[r][c] = 1;
                 occupancyMap[r][c] = True;
-        final_map = self.eta * self.previousMap + (1 - self.eta) * new_map;
+        final_map = self.eta * self.previousMap + new_map;
         self.previousMap = final_map;
         return occupancyMap, final_map;
 
@@ -67,14 +67,16 @@ class Heatmap:
             rate.sleep();
 
 
-def calculateHeatmap():
+def calculateHeatmap(mapName):
+    global CONFIG_FILE_LOCATION
+    CONFIG_FILE_LOCATION = CONFIG_FILE_LOCATION.format(mapName)
     try:
         mapConfiguration = np.load(CONFIG_FILE_LOCATION).item();
     except IOError:
         print(CONFIG_FILE_LOCATION +
               " doesn't exist. Run the following command to create it:\nrosrun sorting_robot generate_map_config");
     else:
-        heatmap = Heatmap(mapConfiguration['num_rows'], mapConfiguration['num_columns']);
+        heatmap = Heatmap(mapName, mapConfiguration['num_rows'], mapConfiguration['num_columns']);
         print('Heatmap node is running...')
         heatmap.run();
 

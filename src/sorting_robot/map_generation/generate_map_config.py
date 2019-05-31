@@ -11,6 +11,7 @@ if os.environ.get('CATKIN_WORKSPACE'):
 if not os.path.exists(CATKIN_WORKSPACE + '/src/sorting_robot/data'):
     os.makedirs(CATKIN_WORKSPACE + '/src/sorting_robot/data')
 CONFIG_FILE_SAVE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/map_configuration.npy'
+SMALL_CONFIG_FILE_SAVE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/small_map_configuration.npy'
 
 
 class CellType(Enum):
@@ -444,14 +445,16 @@ def parseArgs():
         "-p", default=1, type=int, help="1-indexed row number of first horizontal highway")
     parser.add_argument(
         "-q", default=1, type=int, help="1-indexed column number of first vertical highway")
+    parser.add_argument('--small-map', default=False,
+                        action='store_true', help="whether to keep the map small or not")
     parser.add_argument('--is-not-symmetric', default=False,
                         action='store_true', help="whether to keep the grid symmetric or not")
     args = parser.parse_args()
-    return args.r, args.c, args.m, args.n, args.p, args.q, args.pickup_rows, args.pickup_columns, args.charging_rows, args.is_not_symmetric
+    return args.r, args.c, args.m, args.n, args.p, args.q, args.pickup_rows, args.pickup_columns, args.charging_rows, args.small_map, args.is_not_symmetric
 
 
 def generateMapConfig():
-    r, c, m, n, p, q, pickupRows, pickupColumns, chargingRows, isNotSymmetric = parseArgs()
+    r, c, m, n, p, q, pickupRows, pickupColumns, chargingRows, smallMap, isNotSymmetric = parseArgs()
     if isNotSymmetric:
         print("Not fully implemented yet!")
         exit(1)
@@ -463,14 +466,22 @@ def generateMapConfig():
     p -= 1
     q -= 1
 
+    if smallMap:
+        m = 5
+        n = 5
+        k = 2
+        r = (m + 2) * k + 2
+        c = (n + 2) * k + 2
     centerGrid = getCenterGrid(r, c, m, n, p, q)
-    bottomPickupArea = getBottomPickupArea(n, c, pickupRows, pickupColumns)
-    bottomChargingArea = getBottomChargingArea(n, c, chargingRows)
-    bottomGrid = np.concatenate((bottomPickupArea, bottomChargingArea), axis=0)
-    bottomGrid = addChargingLanes(n, bottomGrid)
-    topGrid = getTopGrid(bottomGrid, n, c)
-    grid = np.concatenate(
-        (topGrid, centerGrid, bottomGrid), axis=0)
+    grid = centerGrid
+    if not smallMap:
+        bottomPickupArea = getBottomPickupArea(n, c, pickupRows, pickupColumns)
+        bottomChargingArea = getBottomChargingArea(n, c, chargingRows)
+        bottomGrid = np.concatenate((bottomPickupArea, bottomChargingArea), axis=0)
+        bottomGrid = addChargingLanes(n, bottomGrid)
+        topGrid = getTopGrid(bottomGrid, n, c)
+        grid = np.concatenate(
+            (topGrid, centerGrid, bottomGrid), axis=0)
 
     for row in range(grid.shape[0]):
         for col in range(grid.shape[1]):
@@ -518,8 +529,6 @@ def generateMapConfig():
             if grid[row][col].cellType in PROHIBITED_CELL_TYPES:
                 grid[row][col].isObstacle = True
 
-    np.save(CONFIG_FILE_SAVE_LOCATION, grid)
-
     '''
     The pickups dict is going to look like this:
     pickups = {
@@ -565,7 +574,11 @@ def generateMapConfig():
         'num_columns': grid.shape[1],
         'cell_length_in_meters': 0.5,
     }
-    np.save(CONFIG_FILE_SAVE_LOCATION, np.array(mapConfiguration))
+
+    if smallMap:
+        np.save(SMALL_CONFIG_FILE_SAVE_LOCATION, np.array(mapConfiguration))
+    else:
+        np.save(CONFIG_FILE_SAVE_LOCATION, np.array(mapConfiguration))
 
 
 if __name__ == "__main__":

@@ -17,10 +17,10 @@ HOME_DIR = os.environ['HOME']
 CATKIN_WORKSPACE = HOME_DIR + '/catkin_ws/'
 if os.environ.get('CATKIN_WORKSPACE'):
     CATKIN_WORKSPACE = os.environ['CATKIN_WORKSPACE']
-CONFIG_FILE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/map_configuration.npy'
-MAP_IMAGE_FILE_SVG_SAVE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/map.svg'
-MAP_IMAGE_FILE_PNG_SAVE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/map.png'
-MAP_LEGEND_FILE_SAVE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/map_legend.png'
+CONFIG_FILE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/{}_configuration.npy'
+MAP_IMAGE_FILE_SVG_SAVE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/{}.svg'
+MAP_IMAGE_FILE_PNG_SAVE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/{}.png'
+MAP_LEGEND_FILE_SAVE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/legend.png'
 
 LEFT_ARROW = u"\u2190"
 RIGHT_ARROW = u"\u2192"
@@ -177,7 +177,11 @@ def createGridImage(data, colorDict, saveFig, imageFormat):
             plt.savefig(MAP_IMAGE_FILE_SVG_SAVE_LOCATION, format=imageFormat, dpi=1200)
 
 
-def generateGridImage(saveFig=False, imageFormat='png'):
+def generateGridImage(mapName, saveFig=False, imageFormat='png'):
+    global CONFIG_FILE_LOCATION, MAP_IMAGE_FILE_PNG_SAVE_LOCATION, MAP_IMAGE_FILE_SVG_SAVE_LOCATION
+    CONFIG_FILE_LOCATION = CONFIG_FILE_LOCATION.format(mapName)
+    MAP_IMAGE_FILE_PNG_SAVE_LOCATION = MAP_IMAGE_FILE_PNG_SAVE_LOCATION.format(mapName)
+    MAP_IMAGE_FILE_SVG_SAVE_LOCATION = MAP_IMAGE_FILE_SVG_SAVE_LOCATION.format(mapName)
     try:
         mapConfiguration = np.load(CONFIG_FILE_LOCATION).item()
     except IOError:
@@ -193,5 +197,5 @@ def generateGridImage(saveFig=False, imageFormat='png'):
 
 
 if __name__ == "__main__":
-    generateGridImage(saveFig=True, imageFormat='png')
-    generateGridImage(saveFig=True, imageFormat='svg')
+    generateGridImage('map', saveFig=True, imageFormat='png')
+    generateGridImage('map', saveFig=True, imageFormat='svg')

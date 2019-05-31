@@ -8,8 +8,8 @@ HOME_DIR = os.environ['HOME']
 CATKIN_WORKSPACE = HOME_DIR + '/catkin_ws/'
 if os.environ.get('CATKIN_WORKSPACE'):
     CATKIN_WORKSPACE = os.environ['CATKIN_WORKSPACE']
-CONFIG_FILE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/map_configuration.npy'
-BINARY_GRID_IMAGE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/binary_grid.png'
+CONFIG_FILE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/{}_configuration.npy'
+BINARY_GRID_IMAGE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/{}_binary_grid.png'
 
 
 def saveDataToImage(data, filename):
@@ -22,7 +22,10 @@ def saveDataToImage(data, filename):
     im.save(filename, "PNG")
 
 
-def generateBinaryMap(pixelToCellRatio):
+def generateBinaryMap(mapName, pixelToCellRatio):
+    global CONFIG_FILE_LOCATION, BINARY_GRID_IMAGE_LOCATION
+    CONFIG_FILE_LOCATION = CONFIG_FILE_LOCATION.format(mapName)
+    BINARY_GRID_IMAGE_LOCATION = BINARY_GRID_IMAGE_LOCATION.format(mapName)
     try:
         mapConfiguration = np.load(CONFIG_FILE_LOCATION).item()
     except IOError:
@@ -43,4 +46,4 @@ def generateBinaryMap(pixelToCellRatio):
 
 
 if __name__ == '__main__':
-    generateBinaryMap(50)
+    generateBinaryMap('map', 50)

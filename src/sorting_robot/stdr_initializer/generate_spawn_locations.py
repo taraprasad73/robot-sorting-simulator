@@ -9,18 +9,10 @@ HOME_DIR = os.environ['HOME']
 CATKIN_WORKSPACE = HOME_DIR + '/catkin_ws/'
 if os.environ.get('CATKIN_WORKSPACE'):
     CATKIN_WORKSPACE = os.environ['CATKIN_WORKSPACE']
-CONFIG_FILE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/map_configuration.npy'
-GENERATED_SCRIPT_FILE = CATKIN_WORKSPACE + '/src/sorting_robot/data/spawn_robots.sh'
+CONFIG_FILE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/{}_configuration.npy'
+GENERATED_SCRIPT_FILE = CATKIN_WORKSPACE + '/src/sorting_robot/data/spawn_robots_on_{}.sh'
 
 ADD_ROBOT_TEMPLATE = 'rosrun stdr_robot robot_handler add $HOME/catkin_ws/src/sorting_robot/stdr_data/robots/pandora_robot.yaml {} {} {}\n'
-
-
-def parseArgs():
-    parser = argparse.ArgumentParser(
-        description="parameters for generating spawn locations")
-    parser.add_argument("n", type=int, help="total number of robots")
-    args = parser.parse_args()
-    return args.n
 
 
 def getRandomFreePoints(count, cells, grid):
@@ -34,7 +26,10 @@ def getRandomFreePoints(count, cells, grid):
     return result
 
 
-def generateSpawnLocations(numberOfLocations):
+def generateSpawnLocations(mapName, numberOfLocations):
+    global CONFIG_FILE_LOCATION, GENERATED_SCRIPT_FILE
+    CONFIG_FILE_LOCATION = CONFIG_FILE_LOCATION.format(mapName)
+    GENERATED_SCRIPT_FILE = GENERATED_SCRIPT_FILE.format(mapName)
     try:
         mapConfiguration = np.load(CONFIG_FILE_LOCATION).item()
     except IOError:
@@ -45,7 +40,8 @@ def generateSpawnLocations(numberOfLocations):
         cells = [(r, c) for r in range(grid.shape[0])
                  for c in range(grid.shape[1])]
         freeCells = getRandomFreePoints(numberOfLocations, cells, grid)
-        csm = CoordinateSpaceManager()
+        print(freeCells)
+        csm = CoordinateSpaceManager(mapName)
         points = []
         for cell in freeCells:
             points.append(csm.getWorldCoordinateWithDirection(cell))
@@ -56,4 +52,4 @@ def generateSpawnLocations(numberOfLocations):
 
 
 if __name__ == "__main__":
-    generateSpawnLocations(parseArgs())
+    generateSpawnLocations('map', 5)

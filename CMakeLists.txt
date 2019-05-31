@@ -64,7 +64,6 @@ add_service_files(
   FILES
   Path.srv
   PathToBin.srv
-  PathInPickup.srv
   TrafficService.srv
   GetPickup.srv
 )

@@ -8,18 +8,19 @@ from sorting_robot.map_generation import generateGridImage
 def parseArgs():
     parser = argparse.ArgumentParser(
         description="parameters for generating binary map")
+    parser.add_argument("--map-name", default='map', type=str, help="name of the map file")
     parser.add_argument('--dont-save-fig', default=False,
                         action='store_true', help="whether to save the image or not")
     args = parser.parse_args()
-    return not args.dont_save_fig
+    return args.map_name, not args.dont_save_fig
 
 if __name__ == '__main__':
     if os.environ.get('CIRCLECI'):
         generateGridImage(saveFig=False)
     else:
-        saveFig = parseArgs()
+        mapName, saveFig = parseArgs()
         if saveFig:
-            generateGridImage(saveFig=True, imageFormat='png')
-            generateGridImage(saveFig=True, imageFormat='svg')
+            generateGridImage(mapName, saveFig=True, imageFormat='png')
+            generateGridImage(mapName, saveFig=True, imageFormat='svg')
         else:
-            generateGridImage(saveFig=False)
+            generateGridImage(mapName, saveFig=False)

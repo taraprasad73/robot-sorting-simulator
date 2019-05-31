@@ -8,11 +8,11 @@ HOME_DIR = os.environ['HOME']
 CATKIN_WORKSPACE = HOME_DIR + '/catkin_ws/'
 if os.environ.get('CATKIN_WORKSPACE'):
     CATKIN_WORKSPACE = os.environ['CATKIN_WORKSPACE']
-CONFIG_FILE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/map_configuration.npy'
+CONFIG_FILE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/{}_configuration.npy'
 
 # percent of the cell length to be added at each boundary
 # if 10% is used, 0.9 to 0.1 will be counted as both 0+ and 1+ and 1.0 to 1.1 will be counted as both 1+ and 0+
-BOUNDARY_CROSSING_TOLERANCE_PERCENT = 5
+BOUNDARY_CROSSING_TOLERANCE_PERCENT = 40
 
 # tolerance to be used (in degrees) while converting degrees to direction
 # if tolerance is 10 degrees, then UP refers to angles between 80 and 100 exclusive
@@ -31,7 +31,9 @@ def directionToRadians(direction):
 
 
 class CoordinateSpaceManager:
-    def __init__(self):
+    def __init__(self, mapName):
+        global CONFIG_FILE_LOCATION
+        CONFIG_FILE_LOCATION = CONFIG_FILE_LOCATION.format(mapName)
         try:
             mapConfiguration = np.load(CONFIG_FILE_LOCATION).item()
         except IOError:
@@ -103,6 +105,7 @@ class CoordinateSpaceManager:
         if len(cell) > 2:
             theta = math.radians(cell[2])
         else:
+            print(self.grid[r][c].directions)
             if len(self.grid[r][c].directions) > 0:
                 # select any one direction from the list of valid directions arbitrarily
                 theta = directionToRadians(list(self.grid[r][c].directions)[0])

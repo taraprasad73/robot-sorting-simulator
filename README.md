@@ -106,7 +106,7 @@ Any launch file can be executed as rosrun sorting_robot name_of_launch_file [com
     ~~~~
     Terminal 1: roscore
     Terminal 2: roslaunch sorting_robot stdr_server_with_map_and_gui.launch
-    Terminal 3: bash $HOME/catkin_ws/src/sorting_robot/data/spawn_robots.sh
+    Terminal 3: bash $HOME/catkin_ws/src/sorting_robot/data/spawn_robots_on_map.sh
     ~~~~
 
 ## Code Formatter Settings for Visual Studio Code

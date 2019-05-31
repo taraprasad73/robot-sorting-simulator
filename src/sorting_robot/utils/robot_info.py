@@ -18,4 +18,12 @@ class RobotInfo:
             print(ROBOT_CONFIGURATION_FILE_LOCATION + " doesn't exist.");
             raise IOError("robot config file doesn't exist.")
         else:
-            return robotInfo['robot']['robot_specifications'][0]['footprint']['footprint_specifications']['radius']
+            return 1000 * robotInfo['robot']['robot_specifications'][0]['footprint']['footprint_specifications']['radius']
+
+    @staticmethod
+    def getAverageLinearSpeed():
+        return 1
+
+    @staticmethod
+    def getAverageAngularSpeed():
+        return 0.5
