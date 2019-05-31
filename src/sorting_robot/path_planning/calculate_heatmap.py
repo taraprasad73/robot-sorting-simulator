@@ -2,6 +2,7 @@ import argparse;
 import rospy;
 import re;
 import os;
+import threading
 import numpy as np;
 from geometry_msgs.msg import Pose;
 from nav_msgs.msg import Odometry;
@@ -14,7 +15,8 @@ if os.environ.get('CATKIN_WORKSPACE'):
     CATKIN_WORKSPACE = os.environ['CATKIN_WORKSPACE']
 CONFIG_FILE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/{}_configuration.npy'
 
-HEATMAP_PUBLISH_RATE = 1;
+HEATMAP_PUBLISH_RATE = 2;
+TOPIC_SEARCH_INTERVAL = 0.5;
 
 
 class Heatmap:
@@ -44,6 +46,7 @@ class Heatmap:
                 name = check.group()[1:len(check.group()) - 1];
                 subscribers.append(rospy.Subscriber(topic_name, Odometry, self.callback, name));
         self.subscribers = subscribers;
+        threading.Timer(TOPIC_SEARCH_INTERVAL, self.findTopics).start()
 
     def getHeatmap(self):
         occupancyMap = np.zeros(self.gridShape, dtype=bool);

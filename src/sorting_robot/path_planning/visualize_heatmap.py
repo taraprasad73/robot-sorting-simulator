@@ -185,7 +185,7 @@ def heatmapVisualizer(mapName):
         rospy.Subscriber('heat_map', HeatMap, storeHeatData)
         fig, ax = plt.subplots()
         im, title = initHeatmap(data=heatData, ax=ax, cmap='Wistia', cbarlabel="heat value")
-        heatmapAnimation = FuncAnimation(fig, updatePlot, fargs=(ax, im, title), interval=1000, repeat=True, blit=False)
+        heatmapAnimation = FuncAnimation(fig, updatePlot, fargs=(ax, im, title), interval=500, repeat=True, blit=False)
         fig.canvas.mpl_connect('close_event', handle_close)
         plt.show()
 
