@@ -54,19 +54,23 @@ LEFT_DOWN_DIRECTIONS = set([Direction.LEFT, Direction.DOWN])
 DOWN_RIGHT_DIRECTIONS = set([Direction.DOWN, Direction.RIGHT])
 RIGHT_UP_DIRECTIONS = set([Direction.RIGHT, Direction.UP])
 UP_LEFT_DIRECTIONS = set([Direction.UP, Direction.LEFT])
-
-PROHIBITED_CELL_TYPES = set(
-    [CellType.PARCEL_BIN, CellType.RESTRICTED_AREA, CellType.PICKUP_AREA])
+OBSTACLE_CELL_TYPES = set([CellType.PARCEL_BIN, CellType.RESTRICTED_AREA, CellType.PICKUP_AREA])
 
 
-# check if cell is inside the grid and does not belong to prohibited cell types
-def isCellReachable(grid, cell):
+# check if movement is allowed from source cell to target cell
+def isMovementAllowed(sourceCell, targetCell):
+    if targetCell.cellType in PROHIBITED_CELL_TYPES[sourceCell.cellType]:
+        return False
+    return True
+
+
+# check if cell is inside the grid
+def isWithinGrid(grid, cell):
     row, col = cell
     r = grid.shape[0]
     c = grid.shape[1]
-    if cell[0] >= 0 and cell[0] < r and cell[1] >= 0 and cell[1] < c:
-        if not grid[row][col].cellType in PROHIBITED_CELL_TYPES:
-            return True
+    if row >= 0 and row < r and col >= 0 and col < c:
+        return True
     return False
 
 
@@ -89,52 +93,7 @@ class Cell:
     def setCellType(self, cellType):
         self.cellType = cellType
 
-    def assignCellType(self):
-        numDirections = len(self.directions)
-
-        if numDirections == 0:
-            self.setCellType(CellType.PARCEL_BIN)
-        elif numDirections == 1:
-            if self.isOnHighway:
-                self.setCellType(CellType.ONE_WAY_ROAD_ON_HIGHWAY)
-            else:
-                self.setCellType(CellType.ONE_WAY_ROAD_ON_STREET)
-        elif numDirections == 2:
-            if self.isOnHorizontalHighway and self.isOnVerticalHighway:
-                self.setCellType(CellType.HIGHWAY_HIGHWAY_INTERSECTION)
-            elif self.isOnHorizontalHighway and self.isOnVerticalStreet:
-                self.setCellType(CellType.HIGHWAY_STREET_INTERSECTION)
-            elif self.isOnVerticalHighway and self.isOnHorizontalStreet:
-                self.setCellType(CellType.HIGHWAY_STREET_INTERSECTION)
-            elif self.isOnHorizontalStreet and self.isOnVerticalStreet:
-                self.setCellType(CellType.STREET_STREET_INTERSECTION)
-
-        # some of the highway street intersections are actually forks
-        if self.cellType == CellType.HIGHWAY_STREET_INTERSECTION:
-            if self.isOnHorizontalHighway and (self.directions == RIGHT_UP_DIRECTIONS or self.directions == LEFT_DOWN_DIRECTIONS):
-                self.setCellType(CellType.HIGHWAY_STREET_FORK)
-            if self.isOnVerticalHighway and (self.directions == UP_LEFT_DIRECTIONS or self.directions == DOWN_RIGHT_DIRECTIONS):
-                self.setCellType(CellType.HIGHWAY_STREET_FORK)
-
     def removeInvalidDirections(self, grid):
-        # special case for the upper pickup lanes which is not handled by the general logic
-        if self.cellType == CellType.TOP_PICKUP_LANES:
-            if self.directions == LEFT_DOWN_DIRECTIONS:
-                self.directions.remove(Direction.LEFT)
-
-        # remove directions to prevent switching lanes on highway-street intersections
-        if self.cellType == CellType.HIGHWAY_STREET_INTERSECTION:
-            if self.isOnHorizontalHighway:
-                if Direction.UP in self.directions:
-                    self.directions.remove(Direction.UP)
-                if Direction.DOWN in self.directions:
-                    self.directions.remove(Direction.DOWN)
-            elif self.isOnVerticalHighway:
-                if Direction.LEFT in self.directions:
-                    self.directions.remove(Direction.LEFT)
-                if Direction.RIGHT in self.directions:
-                    self.directions.remove(Direction.RIGHT)
-
         def isMovementFeasible(direction):
             if direction == Direction.LEFT:
                 targetCell = [self.row, self.col - 1]
@@ -144,7 +103,7 @@ class Cell:
                 targetCell = [self.row, self.col + 1]
             elif direction == Direction.UP:
                 targetCell = [self.row - 1, self.col]
-            return isCellReachable(grid, targetCell)
+            return isWithinGrid(grid, targetCell) and isMovementAllowed(self, grid[targetCell[0]][targetCell[1]])
 
         dirList = list(self.directions)
         self.directions.clear()
@@ -156,6 +115,8 @@ class Cell:
         if len(self.directions) != 2:
             return
 
+        # need to check whether both the source cell and target cells are valid and movement is allowed between them
+        # to understand the logic of this, generate the config file without using this functiona and see the error in turns
         def isLeftTurnFeasible(turn):
             if turn == Turn.LEFT_DOWN:
                 sourceCell = [self.row, self.col + 1]
@@ -169,8 +130,11 @@ class Cell:
             elif turn == Turn.UP_LEFT:
                 sourceCell = [self.row + 1, self.col]
                 targetCell = [self.row, self.col - 1]
-            if isCellReachable(grid, sourceCell) and isCellReachable(grid, targetCell):
-                return True
+            if isWithinGrid(grid, sourceCell) and isWithinGrid(grid, targetCell):
+                sourceCell = grid[sourceCell[0]][sourceCell[1]]
+                targetCell = grid[targetCell[0]][targetCell[1]]
+                if isMovementAllowed(sourceCell, targetCell):
+                    return True
             return False
 
         def setLeftTurnIfFeasible(turn):
@@ -187,7 +151,7 @@ class Cell:
         elif self.directions == UP_LEFT_DIRECTIONS:
             setLeftTurnIfFeasible(Turn.UP_LEFT)
 
-        # add the right turns if the cell is on a simple intersection
+        # add the right turns if the cell is on a street-street intersection
         if self.cellType == CellType.STREET_STREET_INTERSECTION:
             if self.directions == LEFT_DOWN_DIRECTIONS:
                 self.allowedTurns.add(Turn.DOWN_LEFT)
@@ -292,6 +256,34 @@ def getTopGrid(bottomGrid, n, c):
 
 
 def getCenterGrid(r, c, m, n, p, q):
+
+    def assignCenterGridCellTypes(cell):
+        numDirections = len(cell.directions)
+
+        if numDirections == 0:
+            cell.setCellType(CellType.PARCEL_BIN)
+        elif numDirections == 1:
+            if cell.isOnHighway:
+                cell.setCellType(CellType.ONE_WAY_ROAD_ON_HIGHWAY)
+            else:
+                cell.setCellType(CellType.ONE_WAY_ROAD_ON_STREET)
+        elif numDirections == 2:
+            if cell.isOnHorizontalHighway and cell.isOnVerticalHighway:
+                cell.setCellType(CellType.HIGHWAY_HIGHWAY_INTERSECTION)
+            elif cell.isOnHorizontalHighway and cell.isOnVerticalStreet:
+                cell.setCellType(CellType.HIGHWAY_STREET_INTERSECTION)
+            elif cell.isOnVerticalHighway and cell.isOnHorizontalStreet:
+                cell.setCellType(CellType.HIGHWAY_STREET_INTERSECTION)
+            elif cell.isOnHorizontalStreet and cell.isOnVerticalStreet:
+                cell.setCellType(CellType.STREET_STREET_INTERSECTION)
+
+        # some of the highway street intersections are actually forks
+        if cell.cellType == CellType.HIGHWAY_STREET_INTERSECTION:
+            if cell.isOnHorizontalHighway and (cell.directions == RIGHT_UP_DIRECTIONS or cell.directions == LEFT_DOWN_DIRECTIONS):
+                cell.setCellType(CellType.HIGHWAY_STREET_FORK)
+            if cell.isOnVerticalHighway and (cell.directions == UP_LEFT_DIRECTIONS or cell.directions == DOWN_RIGHT_DIRECTIONS):
+                cell.setCellType(CellType.HIGHWAY_STREET_FORK)
+
     grid = np.empty(shape=(r, c), dtype=object)
     for row in range(r):
         for col in range(c):
@@ -344,7 +336,7 @@ def getCenterGrid(r, c, m, n, p, q):
     # assign cell types
     for row in range(r):
         for col in range(c):
-            grid[row][col].assignCellType()
+            assignCenterGridCellTypes(grid[row][col])
             # special case for first and last columns, make them restricted
             if col == 0 or col == c - 1:
                 grid[row][col].setAsRestricted()
@@ -453,6 +445,27 @@ def parseArgs():
     return args.r, args.c, args.m, args.n, args.p, args.q, args.pickup_rows, args.pickup_columns, args.charging_rows, args.small_map, args.is_not_symmetric
 
 
+# Assigns which types of cells are prohibited to move into for each cell type
+def assignProhibitedTypes():
+    global PROHIBITED_CELL_TYPES
+    PROHIBITED_CELL_TYPES = {}
+    for cellType in CellType:
+        PROHIBITED_CELL_TYPES[cellType] = set(list(OBSTACLE_CELL_TYPES))
+
+    # all cell types are prohibited for obstacle cell types
+    for obstacleCellType in OBSTACLE_CELL_TYPES:
+        for cellType in CellType:
+            PROHIBITED_CELL_TYPES[obstacleCellType].add(cellType)
+
+    PROHIBITED_CELL_TYPES[CellType.BOTTOM_PICKUP_LANES].add(CellType.CHARGING_LANES)
+    PROHIBITED_CELL_TYPES[CellType.TOP_PICKUP_LANES].add(CellType.CHARGING_LANES)
+    PROHIBITED_CELL_TYPES[CellType.PICKUP_QUEUE_START].add(CellType.CHARGING_LANES)
+    PROHIBITED_CELL_TYPES[CellType.PICKUP_QUEUE_FINISH].add(CellType.CHARGING_LANES)
+
+    # to prevent switching lanes on highway-street intersections
+    PROHIBITED_CELL_TYPES[CellType.HIGHWAY_STREET_INTERSECTION].add(CellType.HIGHWAY_STREET_FORK)
+
+
 def generateMapConfig():
     r, c, m, n, p, q, pickupRows, pickupColumns, chargingRows, smallMap, isNotSymmetric = parseArgs()
     if isNotSymmetric:
@@ -472,8 +485,12 @@ def generateMapConfig():
         k = 2
         r = (m + 2) * k + 2
         c = (n + 2) * k + 2
+
+    assignProhibitedTypes()
+
     centerGrid = getCenterGrid(r, c, m, n, p, q)
     grid = centerGrid
+
     if not smallMap:
         bottomPickupArea = getBottomPickupArea(n, c, pickupRows, pickupColumns)
         bottomChargingArea = getBottomChargingArea(n, c, chargingRows)
@@ -526,7 +543,7 @@ def generateMapConfig():
 
     for row in range(grid.shape[0]):
         for col in range(grid.shape[1]):
-            if grid[row][col].cellType in PROHIBITED_CELL_TYPES:
+            if grid[row][col].cellType in OBSTACLE_CELL_TYPES:
                 grid[row][col].isObstacle = True
 
     '''
