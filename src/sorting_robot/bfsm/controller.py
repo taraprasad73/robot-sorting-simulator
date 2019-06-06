@@ -2,6 +2,7 @@ import sys;
 import math;
 import rospy;
 import numpy as np;
+from std_msgs.msg import Int32;
 from nav_msgs.msg import Odometry;
 from geometry_msgs.msg import Pose,Twist;
 from sensor_msgs.msg import LaserScan;
@@ -12,9 +13,9 @@ class Controller:
 	def __init__(self,name):
 		rospy.init_node(name+'_controller',anonymous=False);
 		self.pose = Pose();
-		self.goal = State();
+		self.goal = Pose();
 		self.velocity = Twist();
-		self.laser_scan = [];
+		self.laser_scan = [5.0]*180;
 		self.theta = 0;
 		self.name = name;
 		self.state = "idle";
@@ -22,7 +23,7 @@ class Controller:
 		self.pose_subscriber = rospy.Subscriber('/'+name+'/odom',Odometry,self.odom_callback);
 		self.laser_subscriber = rospy.Subscriber('/'+name+'/laser_0',LaserScan, self.laser_callback);
 		self.goal_subscriber = rospy.Subscriber('/'+name+'/subgoal',Pose, self.goal_callback);
-		self.reached_publisher = rospy.Publisher('/'+name+'/reached_subgoal',Int,queue_size=10);
+		self.reached_publisher = rospy.Publisher('/'+name+'/reached_subgoal',Int32,queue_size=10);
 		self.publisher = rospy.Publisher('/'+name+'/cmd_vel',Twist,queue_size=10);
 		self.rate = rospy.Rate(1);
 
@@ -49,20 +50,27 @@ class Controller:
 				dy = self.goal.position.y-self.pose.position.y;
 				print("goal coordinates: ",self.goal.position.x,self.goal.position.y)
 				a2g = np.arctan2(dy,dx);
-				e = np.arctan2(math.sin(a2g-self.theta),math.cos(a2g-self.theta));
+				diff = np.arctan2(math.sin(a2g-self.theta),math.cos(a2g-self.theta));
 				dg = kv*math.sqrt(dx*dx+dy*dy);
-				if(abs(e)>0.01):
-					self.velocity.angular.z = kw*e;
+				if(abs(diff)>0.01):
+					self.velocity.angular.z = kw*diff;
 					self.velocity.linear.x = 0.0;
 				else:
 					self.velocity.linear.x = kv*math.sqrt(dx*dx+dy*dy);
 					self.velocity.angular.z = 0.0;
-				if(min(self.laser_scan)<=0.5)
+				if(min(self.laser_scan)<=0.0):
 					self.velocity.linear.x = 0;
 					self.velocity.angular.z = 0;
 					self.publisher.publish(self.velocity);
 				else:
 					self.publisher.publish(self.velocity);
+		while(1):
+			diff = self.goal.orientation.z-self.theta;
+			if(diff<=0.01):
+				break;
+			self.velocity.angular.z = kw*diff;
+			self.velocity.linear.x = 0.0;
+			self.publisher.publish(self.velocity);
 		
 		self.rate.sleep();
 		self.velocity.linear.x = 0
@@ -71,6 +79,12 @@ class Controller:
 		return;
 
 	def run(self):
+		self.state = "moving";
+		self.goal.position.x = 8.25;
+		self.goal.position.y = 39.25;
+		self.goal.orientation.z = 3.14;
+		self.move();
+		'''
 		while not rospy.is_shutdown():
 			if(self.state=="idle"):
 				continue;
@@ -80,4 +94,9 @@ class Controller:
 			elif(self.state=="reached"):
 				self.reached_publisher.publish(1);
 				self.state = "idle";
+		'''
 
+if __name__=="__main__":
+	name = sys.argv[1];
+	controller = Controller(name);
+	controller.run();
