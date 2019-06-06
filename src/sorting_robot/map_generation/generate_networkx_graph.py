@@ -16,6 +16,8 @@ CONFIG_FILE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/map_configura
 GRAPH_PICKLED_FILE_SAVE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/graph.gpickle'
 GRAPH_IMAGE_FILE_SAVE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/graph.svg'
 
+
+# Note that these weights are just placeholders, the actual weights change with heatmap
 TURN_COST = 50
 MOVE_COST = 20
 

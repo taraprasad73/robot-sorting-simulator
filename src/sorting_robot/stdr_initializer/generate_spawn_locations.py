@@ -1,5 +1,6 @@
 import os
 import argparse
+import subprocess
 import numpy as np
 from random import shuffle
 from ..map_generation.generate_map_config import Cell
@@ -40,7 +41,6 @@ def generateSpawnLocations(mapName, numberOfLocations):
         cells = [(r, c) for r in range(grid.shape[0])
                  for c in range(grid.shape[1])]
         freeCells = getRandomFreePoints(numberOfLocations, cells, grid)
-        print(freeCells)
         csm = CoordinateSpaceManager(mapName)
         points = []
         for cell in freeCells:
@@ -48,7 +48,13 @@ def generateSpawnLocations(mapName, numberOfLocations):
 
         with open(GENERATED_SCRIPT_FILE, "w") as f:
             for point in points:
-                f.write(ADD_ROBOT_TEMPLATE.format(*point))
+                bashCommand = ADD_ROBOT_TEMPLATE.format(*point)
+                f.write(bashCommand)
+                process = subprocess.Popen(bashCommand, stdout=subprocess.PIPE, shell=True)
+                output, error = process.communicate()
+                print("Shell Output: " + output)
+                if error is not None:
+                    print("Shell Error: " + error)
 
 
 if __name__ == "__main__":
