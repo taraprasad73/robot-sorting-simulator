@@ -96,17 +96,11 @@ Any launch file can be executed as rosrun sorting_robot name_of_launch_file [com
     ~~~~
     The output file will be generated in $HOME/catkin_ws/src/sorting_robot/data/ folder.
 
- - Generate the spawn locations and execute the script
-    ~~~~
-    rosrun sorting_robot generate_spawn_locations [num_of_robots_to_spawn]
-    chmod +x $HOME/catkin_ws/src/sorting_robot/data/spawn_robots.sh
-    ~~~~
-
  - Launch the STDR simulator
     ~~~~
     Terminal 1: roscore
     Terminal 2: roslaunch sorting_robot stdr_server_with_map_and_gui.launch
-    Terminal 3: bash $HOME/catkin_ws/src/sorting_robot/data/spawn_robots_on_map.sh
+    Terminal 3: rosrun sorting_robot generate_spawn_locations [num_of_robots_to_spawn]
     ~~~~
 
 ## Code Formatter Settings for Visual Studio Code

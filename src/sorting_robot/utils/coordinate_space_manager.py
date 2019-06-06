@@ -105,7 +105,6 @@ class CoordinateSpaceManager:
         if len(cell) > 2:
             theta = math.radians(cell[2])
         else:
-            print(self.grid[r][c].directions)
             if len(self.grid[r][c].directions) > 0:
                 # select any one direction from the list of valid directions arbitrarily
                 theta = directionToRadians(list(self.grid[r][c].directions)[0])
