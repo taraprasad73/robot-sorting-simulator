@@ -96,16 +96,18 @@ class Sequencer:
 		return False;
 
 	def follow_path(self,path):
-		#path = self.process(path,k);
+		#path = [self.csm.convertStateToWorld(p.row,p.col,p.direction) for p in path];
+		path = [(9.25,34.25,1.57),(9.25,34.75,1.57),(9.25,35.25,1.57),(9.25,35.75,1.57),(9.25,36.25,1.57),
+		(9.25,36.75,1.57),(9.25,36.75,3.14),(8.75,36.75,3.14),(8.25,36.75,3.14)];
+		path = self.process(path,k);
 		prev = self.pose;
 		for i in range(0,len(path)):
 			while(self.state=="moving"):
 				continue;
-			world_coordinates = self.csm.convertStateToWorld(path[i].row,path[i].col,path[i].direction);
 			pose  = Pose();
-			pose.position.x = world_coordinates[0];
-			pose.position.y = world_coordinates[1];
-			pose.orientation.z = world_coordinates[2];
+			pose.position.x = path[i][0];
+			pose.position.y = path[i][1];
+			pose.orientation.z = path[i][2];
 			if(have_to_turn(prev,path[i])==True):
 				self.publisher.publish(pose);
 				self.state = "moving";

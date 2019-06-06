@@ -27,6 +27,11 @@ class BFSM:
 		self.pose = data.pose.pose;
 		
 	def run(self):
+		path = [];
+		self.state = "go_to_pickup";
+		self.sequencer.follow_path(path);
+		print('Completed BFSM..');
+		'''
 		while not rospy.is_shutdown():
 			if(self.state=="go_to_pickup"):
 				path = self.path_service(self.pose,self.pickup_location);
@@ -47,6 +52,7 @@ class BFSM:
 			elif(self.state=="make_the_drop"):
 				time.sleep(1);
 				self.state = "select_pickup";
+		'''
 
 if __name__=="__main__":
 	name = sys.argv[1];

@@ -39,8 +39,8 @@ class Controller:
 		self.state = "moving";
 
 	def move(self):
-		kv = 1;
-		kw = 1;
+		kv = 0.5;
+		kw = 0.5;
 		i = 0;
 		dg = 5;
 		while(dg>0.01):
@@ -71,7 +71,6 @@ class Controller:
 			self.velocity.angular.z = kw*diff;
 			self.velocity.linear.x = 0.0;
 			self.publisher.publish(self.velocity);
-		
 		self.rate.sleep();
 		self.velocity.linear.x = 0
 		self.velocity.angular.z = 0
@@ -79,9 +78,10 @@ class Controller:
 		return;
 
 	def run(self):
+		'''
 		self.state = "moving";
-		self.goal.position.x = 8.25;
-		self.goal.position.y = 39.25;
+		self.goal.position.x = 9.25;
+		self.goal.position.y = 36.75;
 		self.goal.orientation.z = 3.14;
 		self.move();
 		'''
@@ -94,7 +94,6 @@ class Controller:
 			elif(self.state=="reached"):
 				self.reached_publisher.publish(1);
 				self.state = "idle";
-		'''
 
 if __name__=="__main__":
 	name = sys.argv[1];
