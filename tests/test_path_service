@@ -19,6 +19,6 @@ def getPath(source, destination):
 
 if __name__ == "__main__":
     path = getPath(State(27, 48, 180), State(60, 49, 180))
-    path = [(pose.row, pose.col, pose.direction) for pose in path]
+    path = [(state.row, state.col, state.direction) for state in path]
     print(path)
     print('path service test passed')

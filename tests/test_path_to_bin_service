@@ -11,9 +11,6 @@ def getPathToBin(source, destination):
     try:
         pathService = rospy.ServiceProxy('path_to_bin', PathToBin)
         response = pathService(source, destination)
-        print(type(response))
-        print(response)
-        print(response.path)
         return response.path
     except rospy.ServiceException, e:
         print "Service call failed: %s" % e
@@ -22,5 +19,6 @@ def getPathToBin(source, destination):
 
 if __name__ == "__main__":
     path = getPathToBin(State(17, 7, 90), State(row=20, col=6))
-    path = [(pose.row, pose.col, pose.direction) for pose in path]
+    path = [(state.row, state.col, state.direction) for state in path]
+    print(path)
     print('path_to_bin service test passed')

@@ -6,8 +6,9 @@ import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
 import rospy
-from sorting_robot.msg import State
-from sorting_robot.srv import Path, PathToBin
+from threading import Lock
+from sorting_robot.msg import State, HeatMap
+from sorting_robot.srv import Path, PathToBin, PathResponse, PathToBinResponse
 from ..utils import RobotInfo
 
 HOME_DIR = os.environ['HOME']
@@ -38,16 +39,18 @@ def drawPath(self, nodesInPath):
             pos[node] = (center[0], center[1] - CELL_LENGTH)
     nx.draw(G, pos=pos, arrowsize=2, node_size=0.1, edgecolor='green')
     nx.draw_networkx_edges(G, pos=pos, edgelist=edgelist, arrowsize=6, color='red')
-    plt.savefig(ANNOTATED_GRAPH_IMAGE_FILE_SAVE_LOCATION, dpi=4800)
+    plt.savefig(ANNOTATED_GRAPH_IMAGE_FILE_SAVE_LOCATION, dpi=1200)
 
 
 def updateWeights(data):
     heatmap = np.reshape(data.heat_values, (data.rows, data.columns))
+    graphWeightsLock.acquire()
     for u, v, d in G.edges(data=True):
         if d.get('weight') is not None:
             timeToMove = (abs(u[0] - v[0]) + abs(u[1] - v[1])) / RobotInfo.getAverageLinearSpeed()
             timeToTurn = abs(u[2] - v[2]) / RobotInfo.getAverageLinearSpeed()
             d['weight'] = timeToMove + timeToTurn * TURN_PENALTY + (1 + HEATMAP_PENALTY * heatmap[v[0]][v[1]])
+    graphWeightsLock.release()
 
 
 def heuristic(self, currentNode, targetNode):
@@ -57,18 +60,27 @@ def heuristic(self, currentNode, targetNode):
     return estimatedPathCost
 
 
-def getPathResponse(sourceNode, targetNode):
+def getPath(sourceNode, targetNode):
     nodesInPath = []
-    if sourceNode in G and targetNode in G:
-        try:
-            nodesInPath = nx.astar_path(G, sourceNode, targetNode)
-            nodesInPath = [State(*node) for node in nodesInPath]
-        except nx.NetworkXNoPath:
-            print("No path between {} and {}".format(sourceNode, targetNode))
-    else:
-        print("Either {} or {} doesn't exist as a node in graph".format(sourceNode, targetNode))
-    print(nodesInPath)
-    return PathResponse(path=nodesInPath)
+    try:
+        graphWeightsLock.acquire()
+        nodesInPath = nx.astar_path(G, sourceNode, targetNode)
+        graphWeightsLock.release()
+        nodesInPath = [State(*node) for node in nodesInPath]
+    except nx.NetworkXNoPath:
+        print("No path between {} and {}".format(sourceNode, targetNode))
+    return nodesInPath
+
+
+def getPathLength(G, sourceNode, neighbourNode):
+    pathLength = None
+    try:
+        graphWeightsLock.acquire()
+        pathLength = nx.astar_path_length(G, sourceNode, neighbourNode)
+        graphWeightsLock.release()
+    except nx.NetworkXNoPath:
+        print("No path between {} and {}".format(sourceNode, neighbourNode))
+    return pathLength
 
 
 def handlePathToBinRequest(req):
@@ -77,22 +89,19 @@ def handlePathToBinRequest(req):
     sourceNode = (source.row, source.col, source.direction)
     binNode = (bin_position.row, bin_position.col)
 
-    if sourceNode in G and binNode in G:
+    if sourceNode not in G or binNode not in G:
+        print("Either {} or {} doesn't exist as a node in graph".format(sourceNode, binNode))
+    else:
         pathLengths = {}
         for neighbourNode in G[binNode]:
-            try:
-                pathLength = nx.astar_path_length(G, sourceNode, neighbourNode)
+            pathLength = getPathLength(G, sourceNode, neighbourNode)
+            if pathLength is not None:
                 pathLengths[neighbourNode] = pathLength
-            except nx.NetworkXNoPath:
-                print("No path between {} and {}".format(sourceNode, neighbourNode))
         if len(pathLengths) > 0:
             nearestNode = min(pathLengths, key=pathLengths.get)
-            print("Calculating path...")
-            return getPathResponse(sourceNode, nearestNode)
+            return PathToBinResponse(path=getPath(sourceNode, nearestNode))
         else:
             print("No path to reach the bin {} from {}".format(binNode, sourceNode))
-    else:
-        print("Either {} or {} doesn't exist as a node in graph".format(sourceNode, binNode))
     return None
 
 
@@ -101,13 +110,17 @@ def handlePathRequest(req):
     destination = req.destination
     sourceNode = (source.row, source.col, source.direction)
     targetNode = (destination.row, destination.col, destination.direction)
-    return getPathResponse(sourceNode, targetNode)
+    if sourceNode not in G or targetNode not in G:
+        print("Either {} or {} doesn't exist as a node in graph".format(sourceNode, targetNode))
+        return None
+    return PathResponse(path=getPath(sourceNode, targetNode))
 
 
 def pathPlanner():
     try:
-        global G
+        global G, graphWeightsLock
         G = nx.read_gpickle(GRAPH_PICKLED_FILE_LOCATION)
+        graphWeightsLock = Lock()
     except IOError:
         print(GRAPH_PICKLED_FILE_LOCATION +
               " doesn't exist. Run the following command to create it:\nrosrun sorting_robot generate_networkx_graph")
