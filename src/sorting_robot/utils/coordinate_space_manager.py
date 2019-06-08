@@ -31,7 +31,7 @@ def directionToRadians(direction):
 
 
 class CoordinateSpaceManager:
-    def __init__(self, mapName):
+    def __init__(self, mapName='map'):
         global CONFIG_FILE_LOCATION
         CONFIG_FILE_LOCATION = CONFIG_FILE_LOCATION.format(mapName)
         try:
@@ -53,7 +53,7 @@ class CoordinateSpaceManager:
         col = int(x // self.cellLength)
         row = self.numRowsInGrid - int(y // self.cellLength) - 1
 
-        theta = math.degrees(theta) + 180
+        theta = math.degrees(theta) if(theta>0) else math.degrees(theta)+360
         # check cyclic cases properly
         direction = None
         if 360 - ORIENTATION_TOLERANCE < theta <= 360 and 0 <= theta < 0 + ORIENTATION_TOLERANCE:

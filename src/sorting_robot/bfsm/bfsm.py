@@ -17,11 +17,11 @@ class BFSM:
 		self.drop_location = Pose();
 		self.parcel_id = None;
 		self.sequencer = Sequencer(name);
-		self.pose_subscriber = rospy.Subscriber('/'+name+'/odom',Odometry,odom_callback);
+		self.pose_subscriber = rospy.Subscriber('/'+name+'/odom',Odometry,self.odom_callback);
 		self.path_service = rospy.ServiceProxy('/path',Path);
 		self.bin_service = rospy.ServiceProxy('/path_to_bin',PathToBin);
 		self.pickup_service = rospy.ServiceProxy('/pickup_location',GetPickup);
-		self.ready_to_pickup =rospy.Publisher('/ready_to_pickup',ReadyToPickup);
+		self.ready_to_pickup =rospy.Publisher('/ready_to_pickup',ReadyToPickup,queue_size=10);
 
 	def odom_callback(self,data):
 		self.pose = data.pose.pose;

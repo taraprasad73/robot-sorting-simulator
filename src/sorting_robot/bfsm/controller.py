@@ -36,6 +36,7 @@ class Controller:
 
 	def goal_callback(self,data):
 		self.goal = data;
+		print("Received goal from sequencer");
 		self.state = "moving";
 
 	def move(self):
@@ -85,7 +86,9 @@ class Controller:
 		self.goal.orientation.z = 3.14;
 		self.move();
 		'''
+		print('Controller ready');
 		while not rospy.is_shutdown():
+			print(self.state);
 			if(self.state=="idle"):
 				continue;
 			elif(self.state=="moving"):
