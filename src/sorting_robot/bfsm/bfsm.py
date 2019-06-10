@@ -12,10 +12,11 @@ class BFSM:
 		self.state = "select_pickup";
 		self.possible_states = ["go_to_pickup","select_pickup","making_pickup","make_the_drop","go_to_charge","select_charge","charging"];
 		self.name = name;
-		self.pose = Pose();
+		self.pose = State();
 		self.pickup_location = Pose();
 		self.drop_location = Pose();
 		self.parcel_id = None;
+		self.csm = CoordinateSpaceManager();
 		self.sequencer = Sequencer(name);
 		self.pose_subscriber = rospy.Subscriber('/'+name+'/odom',Odometry,self.odom_callback);
 		self.path_service = rospy.ServiceProxy('/path',Path);
@@ -24,11 +25,18 @@ class BFSM:
 		self.ready_to_pickup =rospy.Publisher('/ready_to_pickup',ReadyToPickup,queue_size=10);
 
 	def odom_callback(self,data):
-		self.pose = data.pose.pose;
+		pose = data.pose.pose;
+		theta = euler_from_quaternion([pose.orientation.x,pose.orientation.y,pose.orientation.z,pose.orientation.w])[2];
+		x,y,theta = self.csm.convertPointToState((pose.position.x,pose.position.y,theta));
+		self.pose.row = x;
+		self.pose.col = y;
+		self.pose.direction = theta; 
 		
 	def run(self):
 		path = [];
 		self.state = "go_to_pickup";
+		self.goal = State();
+		path = self.path_service(self.pose,self.goal);
 		self.sequencer.follow_path(path);
 		print('Completed BFSM..');
 		'''

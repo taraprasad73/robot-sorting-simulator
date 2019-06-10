@@ -106,8 +106,8 @@ class Sequencer:
 		return False;
 
 	def follow_path(self,path):
-		path = [(46,18,90),(45,18,90),(44,18,90),(43,18,90),(42,18,90),(41,18,90),(41,18,180),(41,17,180),(41,16,180)];
-		path = [State(p[0],p[1],p[2]) for p in path];
+		#path = [(46,18,90),(45,18,90),(44,18,90),(43,18,90),(42,18,90),(41,18,90),(41,18,180),(41,17,180),(41,16,180)];
+		#path = [State(p[0],p[1],p[2]) for p in path];
 		path = self.process_path(path);
 		for p in path:
 			print(p);
