@@ -23,6 +23,7 @@ class Sequencer:
 		self.state = "init";
 		self.possible_states = ["init","moving","reached"];
 		self.name = name;
+		self.prev_reached = 0;
 		self.csm = CoordinateSpaceManager();
 		self.publisher = rospy.Publisher('/'+name+'/subgoal',Pose,queue_size=10);
 		self.reached_subscriber = rospy.Subscriber('/'+name+'/reached_subgoal',Int32,self.reached_callback);
@@ -40,9 +41,11 @@ class Sequencer:
 		self.occupancy_map = occupancy_map;
 
 	def reached_callback(self,data):
-		if(data==1):
+		if(data!=self.prev_reached):
 			self.state = "reached";
+			self.prev_reached = data;
 			print("Reached goal");
+			print(self.prev_reached);
 
 	def odom_callback(self,data):
 		pose = data.pose.pose;
@@ -106,10 +109,10 @@ class Sequencer:
 		path = [(46,18,90),(45,18,90),(44,18,90),(43,18,90),(42,18,90),(41,18,90),(41,18,180),(41,17,180),(41,16,180)];
 		path = [State(p[0],p[1],p[2]) for p in path];
 		path = self.process_path(path);
+		for p in path:
+			print(p);
 		prev = self.pose;
 		for i in range(0,len(path)):
-			while(self.state=="moving"):
-				continue;
 			pose  = Pose();
 			world = self.csm.getWorldCoordinateWithDirection((path[i].row,path[i].col,path[i].direction));
 			pose.position.x = world[0];
@@ -147,9 +150,9 @@ class Sequencer:
 			self.publisher.publish(pose);
 			self.state = "moving";
 			print("Published goal");
+			while(self.state=="moving"):
+				self.publisher.publish(pose);
 			prev = path[i];
-		while(self.state=="moving"):
-			continue;
 		self.state = "init";
 		return;
 

@@ -17,6 +17,7 @@ class Controller:
 		self.velocity = Twist();
 		self.laser_scan = [5.0]*180;
 		self.theta = 0;
+		self.reached_count = 0;
 		self.name = name;
 		self.state = "idle";
 		self.possible_states = ["idle","moving","reached"];
@@ -35,21 +36,39 @@ class Controller:
 		self.laser_scan = list(data.ranges);
 
 	def goal_callback(self,data):
-		self.goal = data;
-		print("Received goal from sequencer");
-		self.state = "moving";
+		if(self.new_goal(data)):
+			self.goal = data;
+			print("Received goal from sequencer");
+			print(self.goal);
+			self.state = "moving";
 
+	def angle_difference(self,angle1,angle2):
+		if(abs(angle1-angle2)<=3.14):
+			return angle1-angle2;
+		elif((angle1-angle2)>3.14):
+			return -(6.28-(angle1-angle2));
+		else:
+			return 6.28+(angle1-angle2);
+
+	def new_goal(self,data):
+		dist = math.sqrt(math.pow(data.position.x-self.goal.position.x,2)+math.pow(data.position.y-self.goal.position.y,2));
+		diff = self.angle_difference(data.orientation.z,self.goal.orientation.z);
+		if(dist<=0.1 and abs(diff)<=0.01):
+			return False;
+		else:
+			return True;
+		
 	def move(self):
-		kv = 0.5;
-		kw = 0.5;
+		kv = 1;
+		kw = 1;
 		i = 0;
 		dg = 5;
 		while(dg>0.01):
 			if not rospy.is_shutdown():
-				print('location(x,y),dg,i: ',self.pose.position.x,self.pose.position.y,dg,i)
+				#print('location(x,y),dg,i: ',self.pose.position.x,self.pose.position.y,dg,i)
 				dx = self.goal.position.x-self.pose.position.x;
 				dy = self.goal.position.y-self.pose.position.y;
-				print("goal coordinates: ",self.goal.position.x,self.goal.position.y)
+				#print("goal coordinates: ",self.goal.position.x,self.goal.position.y)
 				a2g = np.arctan2(dy,dx);
 				diff = np.arctan2(math.sin(a2g-self.theta),math.cos(a2g-self.theta));
 				dg = kv*math.sqrt(dx*dx+dy*dy);
@@ -88,15 +107,14 @@ class Controller:
 		'''
 		print('Controller ready');
 		while not rospy.is_shutdown():
-			print(self.state);
 			if(self.state=="idle"):
 				continue;
 			elif(self.state=="moving"):
 				self.move();
+				self.reached_count += 1;
 				self.state = "reached";
 			elif(self.state=="reached"):
-				self.reached_publisher.publish(1);
-				self.state = "idle";
+				self.reached_publisher.publish(self.reached_count);
 
 if __name__=="__main__":
 	name = sys.argv[1];
