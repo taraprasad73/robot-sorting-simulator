@@ -86,7 +86,7 @@ class Controller:
 					self.publisher.publish(self.velocity);
 		while(1):
 			diff = self.goal.orientation.z-self.theta;
-			if(diff<=0.01):
+			if(diff<=0.1):
 				break;
 			self.velocity.angular.z = kw*diff;
 			self.velocity.linear.x = 0.0;

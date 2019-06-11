@@ -104,6 +104,8 @@ class CoordinateSpaceManager:
         theta = None
         if len(cell) > 2:
             theta = math.radians(cell[2])
+            if(theta>math.pi):
+                theta = theta-2*math.pi
         else:
             if len(self.grid[r][c].directions) > 0:
                 # select any one direction from the list of valid directions arbitrarily
