@@ -35,9 +35,10 @@ class BFSM:
 	def run(self):
 		path = [];
 		self.state = "go_to_pickup";
-		self.goal = State();
+		self.pose = State(46,18,90);
+		self.goal = State(19,7,90);
 		path = self.path_service(self.pose,self.goal);
-		self.sequencer.follow_path(path);
+		self.sequencer.follow_path(path.path);
 		print('Completed BFSM..');
 		'''
 		while not rospy.is_shutdown():
