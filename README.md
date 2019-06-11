@@ -102,7 +102,14 @@ Any launch file can be executed as rosrun sorting_robot name_of_launch_file [com
     Terminal 2: roslaunch sorting_robot stdr_server_with_map_and_gui.launch
     Terminal 3: rosrun sorting_robot generate_spawn_locations [num_of_robots_to_spawn]
     ~~~~
-
+## Running the Sorting Robot Program
+-----
+ - Launch the low-level controller and the Behavioral Finite State Machine
+    ~~~~
+    Terminal 1: rosrun sorting_robot controller [robot_name]
+    Terminal 2: rosrun sorting_robot bfsm [robot_name]
+    ~~~~
+    The commands will be extended to use roslaunch for multiple robots. 
 ## Code Formatter Settings for Visual Studio Code
 -----
 
