@@ -104,12 +104,12 @@ Any launch file can be executed as rosrun sorting_robot name_of_launch_file [com
     ~~~~
 ## Running the Sorting Robot Program
 -----
- - The program is controlled by a Behavioral Finite State Machine. The following commands are used to run the low-level controller and the BFSM 
-    ----
+ - Launch the low-level controller and the Behavioral Finite State Machine
+    ~~~~
     Terminal 1: rosrun sorting_robot controller [robot_name]
     Terminal 2: rosrun sorting_robot bfsm [robot_name]
-    ----
-  The commands will be extended to use roslaunch for multiple robots. 
+    ~~~~
+    The commands will be extended to use roslaunch for multiple robots. 
 ## Code Formatter Settings for Visual Studio Code
 -----
 
