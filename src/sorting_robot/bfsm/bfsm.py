@@ -1,7 +1,7 @@
 import rospy;
 import numpy as np;
 from sorting_robot.msg import State,Pickup,ReadyToPickup;
-from sorting_robot.srv import Path,PathInPickup,PathToBin,GetPickup;
+from sorting_robot.srv import Path,PathInPickup,PathToBin,GetPickup,MakePickup;
 from nav_msgs.msg import Odometry;
 from geometry_msgs.msg import Pose;
 from sequencer import *;
@@ -13,15 +13,16 @@ class BFSM:
 		self.possible_states = ["go_to_pickup","select_pickup","making_pickup","make_the_drop","go_to_charge","select_charge","charging"];
 		self.name = name;
 		self.pose = State();
-		self.pickup_location = Pose();
-		self.drop_location = Pose();
-		self.parcel_id = None;
+		self.pickup_location = State();
+		self.bin_location = State();
+		self.pickup_id = None;
 		self.csm = CoordinateSpaceManager();
 		self.sequencer = Sequencer(name);
 		self.pose_subscriber = rospy.Subscriber('/'+name+'/odom',Odometry,self.odom_callback);
 		self.path_service = rospy.ServiceProxy('/path',Path);
 		self.bin_service = rospy.ServiceProxy('/path_to_bin',PathToBin);
 		self.pickup_service = rospy.ServiceProxy('/pickup_location',GetPickup);
+		self.make_pickup_service = rospy.ServiceProxy('/make_pickup',MakePickup);
 		self.ready_to_pickup =rospy.Publisher('/ready_to_pickup',ReadyToPickup,queue_size=10);
 
 	def odom_callback(self,data):
@@ -47,12 +48,13 @@ class BFSM:
 				self.sequencer.follow_path(path.path);
 				self.state = "making_pickup";
 			elif(self.state=="select_pickup"):
-				self.pickup_location = self.pickup_service();
+				pickup_message = self.pickup_service(self.name);
+				self.pickup_location = pickup_message.location;
+				self.pickup_id = pickup_message.pickup_id;
 				self.state = "go_to_pickup";
 			elif(self.state=="make_the_pickup"):
-				self.ready_to_pickup.publish(ReadytoPickup(self.name,self.pickup_location));
-				time.sleep(1);
-				self.get_bin_location();
+				self.bin_location = self.make_pickup_service(self.pickup_id,self.name).location;
+				time.sleep(2);
 				self.state = "go_to_bin";
 			elif(self.state=="go_to_bin"):
 				path = self.bin_service(self.pose,self.bin_location);

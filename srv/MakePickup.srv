@@ -1,0 +1,4 @@
+int64 pickup_id
+std_msgs/String robot_name
+---
+sorting_robot/State location
