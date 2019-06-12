@@ -56,7 +56,7 @@ class CoordinateSpaceManager:
         theta = math.degrees(theta) if(theta>0) else math.degrees(theta)+360
         # check cyclic cases properly
         direction = None
-        if 360 - ORIENTATION_TOLERANCE < theta <= 360 and 0 <= theta < 0 + ORIENTATION_TOLERANCE:
+        if 360 - ORIENTATION_TOLERANCE < theta <= 360 or 0 <= theta < 0 + ORIENTATION_TOLERANCE:
             direction = 0
         elif 90 - ORIENTATION_TOLERANCE < theta < 90 + ORIENTATION_TOLERANCE:
             direction = 90

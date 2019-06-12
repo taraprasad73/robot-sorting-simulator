@@ -82,7 +82,6 @@ class Sequencer:
 		count = 0;
 		for i in range(0,len(path)):
 			if(self.have_to_turn(prev,path[i])==True):
-				processed_path.append(prev);
 				processed_path.append(path[i]);
 				count = 0;
 			elif(count==k):
@@ -108,8 +107,10 @@ class Sequencer:
 	def follow_path(self,path):
 		#path = [(46,18,90),(45,18,90),(44,18,90),(43,18,90),(42,18,90),(41,18,90),(41,18,180),(41,17,180),(41,16,180)];
 		#path = [State(p[0],p[1],p[2]) for p in path];
-		path = self.process_path(path);
+		path = self.process_path(path,5);
 		prev = self.pose;
+		for p in path:
+			print(p);
 		for i in range(0,len(path)):
 			pose  = Pose();
 			print(path[i]);
