@@ -1,9 +1,11 @@
 import rospy;
+import time;
 import numpy as np;
-from sorting_robot.msg import State,Pickup,ReadyToPickup;
+from sorting_robot.msg import State,Pickup;
 from sorting_robot.srv import Path,PathInPickup,PathToBin,GetPickup,MakePickup;
 from nav_msgs.msg import Odometry;
 from geometry_msgs.msg import Pose;
+from std_msgs.msg import String;
 from sequencer import *;
 
 class BFSM:
@@ -49,22 +51,29 @@ class BFSM:
 		while not rospy.is_shutdown():
 			if(self.state=="go_to_pickup"):
 				path = self.path_service(self.pose,self.pickup_location);
+				print("Received path from the planner to pickup");
 				self.sequencer.follow_path(path.path);
-				self.state = "making_pickup";
+				self.state = "make_the_pickup";
 			elif(self.state=="select_pickup"):
-				pickup_message = self.pickup_service(self.name);
+				pickup_message = self.pickup_service(String(self.name)).pickup;
+				print("Received the address of the pickup");
 				self.pickup_location = pickup_message.location;
 				self.pickup_id = pickup_message.pickup_id;
+				print(self.pickup_location);
 				self.state = "go_to_pickup";
 			elif(self.state=="make_the_pickup"):
-				self.bin_location = self.make_pickup_service(self.pickup_id,self.name).location;
+				print("Making the Pickup");
+				self.bin_location = self.make_pickup_service(self.pickup_id,String(self.name)).location;
+				print("Received the address of the bin");
 				time.sleep(2);
 				self.state = "go_to_bin";
 			elif(self.state=="go_to_bin"):
 				path = self.bin_service(self.pose,self.bin_location);
+				print("Received path to the bin");
 				self.sequencer.follow_path(path.path);
 				self.state = "make_the_drop";
 			elif(self.state=="make_the_drop"):
+				print("Making the drop");
 				time.sleep(1);
 				self.state = "select_pickup";
 
