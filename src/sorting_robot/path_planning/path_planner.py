@@ -15,7 +15,7 @@ HOME_DIR = os.environ['HOME']
 CATKIN_WORKSPACE = HOME_DIR + '/catkin_ws/'
 if os.environ.get('CATKIN_WORKSPACE'):
     CATKIN_WORKSPACE = os.environ['CATKIN_WORKSPACE']
-CONFIG_FILE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/map_configuration.npy'
+# CONFIG_FILE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/map_configuration.npy'
 ANNOTATED_GRAPH_IMAGE_FILE_SAVE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/annotated_graph.svg'
 GRAPH_PICKLED_FILE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/graph.gpickle'
 
@@ -23,6 +23,7 @@ TURN_PENALTY = 1.2
 HEATMAP_PENALTY = 1
 
 
+'''
 def drawPath(self, nodesInPath):
     edgelist = [(nodesInPath[i], nodesInPath[i + 1]) for i in range(len(nodesInPath) - 1)]
     CELL_LENGTH = 200
@@ -40,6 +41,7 @@ def drawPath(self, nodesInPath):
     nx.draw(G, pos=pos, arrowsize=2, node_size=0.1, edgecolor='green')
     nx.draw_networkx_edges(G, pos=pos, edgelist=edgelist, arrowsize=6, color='red')
     plt.savefig(ANNOTATED_GRAPH_IMAGE_FILE_SAVE_LOCATION, dpi=1200)
+'''
 
 
 def updateWeights(data):
@@ -125,18 +127,12 @@ def pathPlanner():
         print(GRAPH_PICKLED_FILE_LOCATION +
               " doesn't exist. Run the following command to create it:\nrosrun sorting_robot generate_networkx_graph")
     else:
-        try:
-            mapConfiguration = np.load(CONFIG_FILE_LOCATION).item()
-        except IOError:
-            print(CONFIG_FILE_LOCATION +
-                  " doesn't exist. Run the following command to create it:\nrosrun sorting_robot generate_map_config")
-        else:
-            rospy.init_node('path_planning_server')
-            rospy.Subscriber('heat_map', HeatMap, updateWeights)
-            pathService = rospy.Service('path', Path, handlePathRequest)
-            pathToBinService = rospy.Service('path_to_bin', PathToBin, handlePathToBinRequest)
-            print('path planning server is running...')
-            rospy.spin()
+        rospy.init_node('path_planning_server')
+        rospy.Subscriber('heat_map', HeatMap, updateWeights)
+        pathService = rospy.Service('path', Path, handlePathRequest)
+        pathToBinService = rospy.Service('path_to_bin', PathToBin, handlePathToBinRequest)
+        print('path planning server is running...')
+        rospy.spin()
 
 
 if __name__ == "__main__":

@@ -85,6 +85,26 @@ def addEdges(grid, graph):
                                        (row, col, 180), weight=TURN_COST)
 
 
+def getNodePositions(G, grid):
+    pos = {}
+    for node in G.nodes():
+        center = (node[1] * 3 * CELL_LENGTH, -node[0] * 3 * CELL_LENGTH)
+        cell = grid[node[0]][node[1]]
+        if cell.cellType != CellType.PARCEL_BIN and len(cell.directions) > 1:
+            offset = 0.5
+            if node[2] == 0:
+                pos[node] = (center[0] + offset * CELL_LENGTH, center[1])
+            elif node[2] == 90:
+                pos[node] = (center[0], center[1] + offset * 5 * CELL_LENGTH)
+            elif node[2] == 180:
+                pos[node] = (center[0] - offset * CELL_LENGTH, center[1])
+            elif node[2] == 270:
+                pos[node] = (center[0], center[1] - offset * CELL_LENGTH)
+        else:
+            pos[node] = center
+    return pos
+
+
 def generateNetworkxGraph(saveFig=False):
     try:
         mapConfiguration = np.load(CONFIG_FILE_LOCATION).item()
@@ -96,21 +116,7 @@ def generateNetworkxGraph(saveFig=False):
         G = nx.DiGraph()
         addEdges(grid, G)
 
-        pos = {}
-        for node in G.nodes():
-            center = (node[1] * 3 * CELL_LENGTH, -node[0] * 3 * CELL_LENGTH)
-            cell = grid[node[0]][node[1]]
-            if cell.cellType != CellType.PARCEL_BIN and len(cell.directions) > 1:
-                if node[2] == 0:
-                    pos[node] = (center[0] + 0.5 * CELL_LENGTH, center[1])
-                elif node[2] == 90:
-                    pos[node] = (center[0], center[1] + 0.5 * CELL_LENGTH)
-                elif node[2] == 180:
-                    pos[node] = (center[0] - 0.5 * CELL_LENGTH, center[1])
-                elif node[2] == 270:
-                    pos[node] = (center[0], center[1] - 0.5 * CELL_LENGTH)
-            else:
-                pos[node] = center
+        pos = getNodePositions(G, grid)
 
         nx.write_gpickle(G, GRAPH_PICKLED_FILE_SAVE_LOCATION)
         if saveFig:

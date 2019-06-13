@@ -45,6 +45,9 @@
  - Install the package and its dependencies
     ~~~~
     sudo apt-get install python-tk
+    sudo apt install msttcorefonts -qq
+    rm ~/.cache/matplotlib -rf
+    pip install fonttools
     pip install rospkg pyyaml empy
     pip install -r sorting_robot/requirements.txt
     cd ..

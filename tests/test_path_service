@@ -17,8 +17,40 @@ def getPath(source, destination):
         sys.exit(1)
 
 
+def test(source, target, correctPath=None):
+    try:
+        path = getPath(source, target)
+        path = [(state.row, state.col, state.direction) for state in path]
+    except Exception as e:
+        print('test failed for {} to {}'.format((source.row, source.col, source.direction), (target.row, target.col, target.direction)))
+    else:
+        if correctPath is not None:
+            if path == correctPath:
+                print('test passed for {} to {}'.format((source.row, source.col, source.direction), (target.row, target.col, target.direction), len(path)))
+            else:
+                print('test failed for {} to {}'.format((source.row, source.col, source.direction), (target.row, target.col, target.direction)))
+        elif len(path) > 0:
+            print('test passed for {} to {}. Path has {} nodes.'.format((source.row, source.col, source.direction), (target.row, target.col, target.direction), len(path)))
+        else:
+            print('test failed for {} to {}'.format((source.row, source.col, source.direction), (target.row, target.col, target.direction)))
+
+
 if __name__ == "__main__":
-    path = getPath(State(27, 48, 180), State(60, 49, 180))
-    path = [(state.row, state.col, state.direction) for state in path]
-    print(path)
-    print('path service test passed')
+    # two aritrary points
+    test(State(30, 2, 180), State(29, 2, 0),
+         correctPath=[(30, 2, 180), (30, 1, 180), (30, 0, 180), (30, 0, 90), (29, 0, 90), (29, 0, 0), (29, 1, 0), (29, 2, 0)])
+
+    # arbitrary point to 1st pickup queue start on top
+    test(State(21, 13, 0), State(17, 7, 90))
+
+    # arbitrary point to 1st pickup queue finish on top
+    test(State(21, 13, 0), State(17, 1, 270))
+
+    # arbitrary point to last charging lane entry on bottom
+    test(State(21, 13, 0), State(97, 75, 270))
+
+    # arbitrary point to any charging point on top
+    test(State(20, 7, 90), State(0, 9, 90))
+
+    # arbitrary point to any charging point on bottom
+    test(State(21, 13, 0), State(114, 9, 270))

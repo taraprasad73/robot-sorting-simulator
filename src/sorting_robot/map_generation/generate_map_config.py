@@ -25,11 +25,12 @@ class CellType(Enum):
     RESTRICTED_AREA = 7
     PICKUP_AREA = 8
     BOTTOM_PICKUP_LANES = 9
-    CHARGING_AREA = 10
+    BOTTOM_CHARGING_AREA = 10
     CHARGING_LANES = 11
     TOP_PICKUP_LANES = 12
     PICKUP_QUEUE_START = 13
     PICKUP_QUEUE_FINISH = 14
+    TOP_CHARGING_AREA = 15
 
 
 class Direction(Enum):
@@ -48,12 +49,18 @@ class Turn(Enum):
     RIGHT_DOWN = 5
     UP_RIGHT = 6
     LEFT_UP = 7
+    LEFT_RIGHT = 8
+    RIGHT_LEFT = 9
+    UP_DOWN = 10
+    DOWN_UP = 11
 
 
 LEFT_DOWN_DIRECTIONS = set([Direction.LEFT, Direction.DOWN])
 DOWN_RIGHT_DIRECTIONS = set([Direction.DOWN, Direction.RIGHT])
 RIGHT_UP_DIRECTIONS = set([Direction.RIGHT, Direction.UP])
 UP_LEFT_DIRECTIONS = set([Direction.UP, Direction.LEFT])
+UP_DOWN_DIRECTIONS = set([Direction.UP, Direction.DOWN])
+LEFT_RIGHT_DIRECTIONS = set([Direction.LEFT, Direction.RIGHT])
 OBSTACLE_CELL_TYPES = set([CellType.PARCEL_BIN, CellType.RESTRICTED_AREA, CellType.PICKUP_AREA])
 
 
@@ -112,7 +119,7 @@ class Cell:
                 self.directions.add(direction)
 
     def setAllowedTurns(self, grid):
-        if len(self.directions) != 2:
+        if len(self.directions) < 2:
             return
 
         # need to check whether both the source cell and target cells are valid and movement is allowed between them
@@ -142,25 +149,43 @@ class Cell:
                 self.allowedTurns.add(turn)
 
         # add the left turns
-        if self.directions == LEFT_DOWN_DIRECTIONS:
+        if LEFT_DOWN_DIRECTIONS.issubset(self.directions):
             setLeftTurnIfFeasible(Turn.LEFT_DOWN)
-        elif self.directions == DOWN_RIGHT_DIRECTIONS:
+        elif DOWN_RIGHT_DIRECTIONS.issubset(self.directions):
             setLeftTurnIfFeasible(Turn.DOWN_RIGHT)
-        elif self.directions == RIGHT_UP_DIRECTIONS:
+        elif RIGHT_UP_DIRECTIONS.issubset(self.directions):
             setLeftTurnIfFeasible(Turn.RIGHT_UP)
-        elif self.directions == UP_LEFT_DIRECTIONS:
+        elif UP_LEFT_DIRECTIONS.issubset(self.directions):
             setLeftTurnIfFeasible(Turn.UP_LEFT)
 
         # add the right turns if the cell is on a street-street intersection
-        if self.cellType == CellType.STREET_STREET_INTERSECTION:
-            if self.directions == LEFT_DOWN_DIRECTIONS:
+        # or highway-highway intersection on the boundary
+        if (self.cellType == CellType.STREET_STREET_INTERSECTION or
+                (self.cellType == CellType.HIGHWAY_HIGHWAY_INTERSECTION and (self.col == 0 or self.col == grid.shape[1] - 1))):
+            if LEFT_DOWN_DIRECTIONS.issubset(self.directions):
                 self.allowedTurns.add(Turn.DOWN_LEFT)
-            elif self.directions == DOWN_RIGHT_DIRECTIONS:
+            elif DOWN_RIGHT_DIRECTIONS.issubset(self.directions):
                 self.allowedTurns.add(Turn.RIGHT_DOWN)
-            elif self.directions == RIGHT_UP_DIRECTIONS:
+            elif RIGHT_UP_DIRECTIONS.issubset(self.directions):
                 self.allowedTurns.add(Turn.UP_RIGHT)
-            elif self.directions == UP_LEFT_DIRECTIONS:
+            elif UP_LEFT_DIRECTIONS.issubset(self.directions):
                 self.allowedTurns.add(Turn.LEFT_UP)
+
+        # need to handle the charging area cases separately as more than one right turns are possible, as they have 3 directions each
+        # right turn at cell adjacent to top charging area
+        if (self.row > 0 and grid[self.row - 1][self.col].cellType == CellType.TOP_CHARGING_AREA):
+            self.allowedTurns.add(Turn.LEFT_UP)
+
+        # right turn at cell adjacent to bottom charging area
+        if (self.row < grid.shape[0] - 1 and grid[self.row + 1][self.col].cellType == CellType.BOTTOM_CHARGING_AREA):
+            self.allowedTurns.add(Turn.UP_RIGHT)
+
+        # add the 180 degree turns at charging areas
+        if self.directions == UP_DOWN_DIRECTIONS:
+            if self.cellType == CellType.TOP_CHARGING_AREA:
+                self.allowedTurns.add(Turn.UP_DOWN)
+            elif self.cellType == CellType.BOTTOM_CHARGING_AREA:
+                self.allowedTurns.add(Turn.DOWN_UP)
 
     def setAsRestricted(self):
         self.cellType = CellType.RESTRICTED_AREA
@@ -186,6 +211,8 @@ def addChargingLanes(n, bottomGrid):
             bottomGrid[row][col + 2].directions.add(Direction.UP)
             bottomGrid[row][col + 2].cellType = CellType.CHARGING_LANES
         bottomGrid[r - 1][col].directions.add(Direction.UP)
+        bottomGrid[r - 1][col].directions.add(Direction.DOWN)
+        bottomGrid[r - 2][col].directions.add(Direction.UP)
         for j in range(col, col + 3):
             bottomGrid[r - 2][j].directions.add(Direction.RIGHT)
             bottomGrid[r - 2][j].cellType = CellType.CHARGING_LANES
@@ -198,7 +225,7 @@ def getBottomChargingArea(n, c, chargingRows):
         for col in range(c):
             grid[row][col] = Cell(CellType.RESTRICTED_AREA)
     for col in range(n, c, n + 2):
-        grid[chargingRows - 1][col].cellType = CellType.CHARGING_AREA
+        grid[chargingRows - 1][col].cellType = CellType.BOTTOM_CHARGING_AREA
     return grid
 
 
@@ -242,6 +269,8 @@ def getTopGrid(bottomGrid, n, c):
             cell.pickupId *= -1
             if cell.cellType == CellType.BOTTOM_PICKUP_LANES:
                 cell.cellType = CellType.TOP_PICKUP_LANES
+            if cell.cellType == CellType.BOTTOM_CHARGING_AREA:
+                cell.cellType = CellType.TOP_CHARGING_AREA
             if Direction.RIGHT in cell.directions:
                 cell.directions.remove(Direction.RIGHT)
                 cell.directions.add(Direction.LEFT)
@@ -249,9 +278,6 @@ def getTopGrid(bottomGrid, n, c):
                 cell.cellType = CellType.PICKUP_QUEUE_FINISH
             elif cell.cellType == CellType.PICKUP_QUEUE_FINISH:
                 cell.cellType = CellType.PICKUP_QUEUE_START
-    for col in range(n, c, n + 2):
-        grid[0][col].directions.remove(Direction.UP)
-        grid[0][col].directions.add(Direction.DOWN)
     return grid
 
 
@@ -339,7 +365,8 @@ def getCenterGrid(r, c, m, n, p, q):
             assignCenterGridCellTypes(grid[row][col])
             # special case for first and last columns, make them restricted
             if col == 0 or col == c - 1:
-                grid[row][col].setAsRestricted()
+                if grid[row][col].cellType != CellType.HIGHWAY_HIGHWAY_INTERSECTION:
+                    grid[row][col].setAsRestricted()
     return grid
 
 
