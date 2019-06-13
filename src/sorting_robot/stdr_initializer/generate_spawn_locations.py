@@ -1,6 +1,7 @@
 import os
 import argparse
 import subprocess
+import time
 import numpy as np
 from random import shuffle
 from ..map_generation.generate_map_config import Cell
@@ -55,6 +56,9 @@ def generateSpawnLocations(mapName, numberOfLocations):
                 print("Shell Output: " + output)
                 if error is not None:
                     print("Shell Error: " + error)
+
+                # wait for some time, so that the stdr simulator is not overloaded with requests
+                time.sleep(1)
 
 
 if __name__ == "__main__":

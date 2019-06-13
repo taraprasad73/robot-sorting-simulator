@@ -88,7 +88,9 @@ Any launch file can be executed as rosrun sorting_robot name_of_launch_file [com
    - traffic_manager
    - bfsm
 
-## Spawn Robots on the STDR simulator
+## Running the Sorting Robot Program
+
+### Spawn Robots on the STDR simulator
 -----
  - Generate the map configuration file
     ~~~~
@@ -102,7 +104,16 @@ Any launch file can be executed as rosrun sorting_robot name_of_launch_file [com
     Terminal 2: roslaunch sorting_robot stdr_server_with_map_and_gui.launch
     Terminal 3: rosrun sorting_robot generate_spawn_locations [num_of_robots_to_spawn]
     ~~~~
-## Running the Sorting Robot Program
+
+### Run Heatmap and Path Planner nodes
+-----
+ - Launch the heatmap service and the path planner service
+    ~~~~
+    Terminal 1: rosrun sorting_robot heatmap
+    Terminal 2: rosrun sorting_robot path_planner
+    ~~~~
+
+### Launch BFSM and Controller
 -----
  - Launch the low-level controller and the Behavioral Finite State Machine
     ~~~~
@@ -110,6 +121,7 @@ Any launch file can be executed as rosrun sorting_robot name_of_launch_file [com
     Terminal 2: rosrun sorting_robot bfsm [robot_name]
     ~~~~
     The commands will be extended to use roslaunch for multiple robots. 
+
 ## Code Formatter Settings for Visual Studio Code
 -----
 

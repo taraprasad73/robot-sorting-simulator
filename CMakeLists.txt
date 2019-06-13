@@ -66,6 +66,7 @@ add_service_files(
   PathToBin.srv
   TrafficService.srv
   GetPickup.srv
+  MakePickup.srv
 )
 
 ## Generate actions in the 'action' folder
