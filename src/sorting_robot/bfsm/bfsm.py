@@ -16,6 +16,7 @@ class BFSM:
 		self.pickup_location = State();
 		self.bin_location = State();
 		self.pickup_id = None;
+		self.ready = False;
 		self.csm = CoordinateSpaceManager();
 		self.sequencer = Sequencer(name);
 		self.pose_subscriber = rospy.Subscriber('/'+name+'/odom',Odometry,self.odom_callback);
@@ -23,7 +24,6 @@ class BFSM:
 		self.bin_service = rospy.ServiceProxy('/path_to_bin',PathToBin);
 		self.pickup_service = rospy.ServiceProxy('/pickup_location',GetPickup);
 		self.make_pickup_service = rospy.ServiceProxy('/make_pickup',MakePickup);
-		self.ready_to_pickup =rospy.Publisher('/ready_to_pickup',ReadyToPickup,queue_size=10);
 
 	def odom_callback(self,data):
 		pose = data.pose.pose;
@@ -31,9 +31,11 @@ class BFSM:
 		x,y,theta = self.csm.convertPointToState((pose.position.x,pose.position.y,theta));
 		self.pose.row = x;
 		self.pose.col = y;
-		self.pose.direction = theta; 
+		self.pose.direction = theta;
+		self.ready = True;
 		
 	def run(self):
+		'''
 		path = [];
 		self.state = "go_to_pickup";
 		self.pose = State(46,18,90);
@@ -42,6 +44,8 @@ class BFSM:
 		self.sequencer.follow_path(path.path);
 		print('Completed BFSM..');
 		'''
+		while(self.ready==False):
+			continue;
 		while not rospy.is_shutdown():
 			if(self.state=="go_to_pickup"):
 				path = self.path_service(self.pose,self.pickup_location);
@@ -63,7 +67,6 @@ class BFSM:
 			elif(self.state=="make_the_drop"):
 				time.sleep(1);
 				self.state = "select_pickup";
-		'''
 
 if __name__=="__main__":
 	name = sys.argv[1];
