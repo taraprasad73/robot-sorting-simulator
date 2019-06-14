@@ -64,8 +64,8 @@ class BFSM:
 			elif(self.state=="make_the_pickup"):
 				print("Making the Pickup");
 				self.bin_location = self.make_pickup_service(self.pickup_id,String(self.name)).location;
-				print("Received the address of the bin");
 				time.sleep(2);
+				print("Received the address of the bin");
 				self.state = "go_to_bin";
 			elif(self.state=="go_to_bin"):
 				path = self.bin_service(self.pose,self.bin_location);

@@ -16,7 +16,7 @@ CONFIG_FILE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/map_configura
 
 class PickupQueue:
 	def __init__(self,x,y,directions,pickup_id,queue_size):
-		self.location = State(x,y,0) if(Direction.UP in directions) else State(x,y,270);
+		self.location = State(x,y,90) if(Direction.UP in directions) else State(x,y,270);
 		self.pickup_id = pickup_id;
 		self.queue_size = queue_size;
 		self.queue = set();
@@ -52,7 +52,7 @@ class PickupManager:
 		self.bins = [];
 		for i in range(0,rows):
 			for j in range(0,cols):
-				if(data[i][j].cellType==CellType.PICKUP_QUEUE_START):
+				if(data[i][j].cellType==CellType.PICKUP_QUEUE_FINISH):
 					self.queues.append(PickupQueue(i,j,data[i][j].directions,count,queue_size));
 					count += 1;
 				elif(data[i][j].cellType==CellType.PARCEL_BIN):

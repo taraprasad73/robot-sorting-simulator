@@ -85,12 +85,13 @@ class Controller:
 				else:
 					self.publisher.publish(self.velocity);
 		while(1):
-			diff = self.goal.orientation.z-self.theta;
-			if(diff<=0.1):
-				break;
-			self.velocity.angular.z = kw*diff;
-			self.velocity.linear.x = 0.0;
-			self.publisher.publish(self.velocity);
+			if not rospy.is_shutdown():
+				diff = self.angle_difference(self.goal.orientation.z,self.theta);
+				if(abs(diff)<=0.1):
+					break;
+				self.velocity.angular.z = kw*diff;
+				self.velocity.linear.x = 0.0;
+				self.publisher.publish(self.velocity);
 		self.rate.sleep();
 		self.velocity.linear.x = 0
 		self.velocity.angular.z = 0
@@ -98,13 +99,6 @@ class Controller:
 		return;
 
 	def run(self):
-		'''
-		self.state = "moving";
-		self.goal.position.x = 9.25;
-		self.goal.position.y = 36.75;
-		self.goal.orientation.z = 3.14;
-		self.move();
-		'''
 		print('Controller ready');
 		while not rospy.is_shutdown():
 			if(self.state=="idle"):

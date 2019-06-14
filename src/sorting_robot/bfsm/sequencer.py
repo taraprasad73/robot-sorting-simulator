@@ -42,9 +42,9 @@ class Sequencer:
 		self.occupancy_map = occupancy_map;
 
 	def reached_callback(self, data):
-		if(data != self.prev_reached):
+		if(data.data != self.prev_reached):
 			self.state = "reached";
-			self.prev_reached = data;
+			self.prev_reached = data.data;
 			print("Reached goal");
 			print(self.prev_reached);
 
@@ -78,7 +78,7 @@ class Sequencer:
 	def process_path(self, path, k=3):
 		if(len(path) <= 1):
 			return path;
-		processed_path = [path[0]];
+		processed_path = [];
 		prev = path[0];
 		count = 0;
 		for i in range(0, len(path)):
@@ -110,8 +110,6 @@ class Sequencer:
 		#path = [State(p[0],p[1],p[2]) for p in path];
 		path = self.process_path(path, 5);
 		prev = self.pose;
-		for p in path:
-			print(p);
 		for i in range(0, len(path)):
 			pose = Pose();
 			print(path[i]);
@@ -146,11 +144,11 @@ class Sequencer:
 				self.state = "moving";
 			print("Published goal");
 			while(self.state == "moving"):
-				if(rospy.is_shutdown()):
+				if(rospy.is_shutdown()==True):
 					break;
 				self.publisher.publish(pose);
 			prev = path[i];
-			if rospy.is_shutdown():
+			if(rospy.is_shutdown()==True):
 				break;
 		self.state = "init";
 		return;
