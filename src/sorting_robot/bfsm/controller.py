@@ -23,8 +23,10 @@ class Controller:
 		self.possible_states = ["idle","moving","reached"];
 		self.pose_subscriber = rospy.Subscriber('/'+name+'/odom',Odometry,self.odom_callback);
 		self.laser_subscriber = rospy.Subscriber('/'+name+'/laser_0',LaserScan, self.laser_callback);
-		self.goal_subscriber = rospy.Subscriber('/'+name+'/subgoal',Pose, self.goal_callback);
-		self.reached_publisher = rospy.Publisher('/'+name+'/reached_subgoal',Int32,queue_size=10);
+		#self.goal_subscriber = rospy.Subscriber('/'+name+'/subgoal',Pose, self.goal_callback);
+		#self.reached_publisher = rospy.Publisher('/'+name+'/reached_subgoal',Int32,queue_size=10);
+		self.goal_service = rospy.Service('/'+name+'/subgoal',GoalService,self.receive_goal);
+		self.reached_service = rospy.ServiceProxy('/'+name+'/reached_subgoal',ReachedService);
 		self.publisher = rospy.Publisher('/'+name+'/cmd_vel',Twist,queue_size=10);
 		self.rate = rospy.Rate(1);
 
@@ -34,13 +36,20 @@ class Controller:
 
 	def laser_callback(self,data):
 		self.laser_scan = list(data.ranges);
-
+	'''
 	def goal_callback(self,data):
 		if(self.new_goal(data)):
 			self.goal = data;
 			print("Received goal from sequencer");
 			print(self.goal);
 			self.state = "moving";
+	'''
+	def receive_goal(self,data):
+		self.goal = data.goal
+		print("Received goal from sequencer");
+		print(self.goal);
+		self.state = "moving";
+		return;
 
 	def angle_difference(self,angle1,angle2):
 		if(abs(angle1-angle2)<=3.14):
@@ -101,15 +110,17 @@ class Controller:
 	def run(self):
 		print('Controller ready');
 		while not rospy.is_shutdown():
-			if(self.state=="idle"):
+			if(self.state=="idle" or self.state=="reached"):
 				continue;
 			elif(self.state=="moving"):
 				self.move();
 				self.reached_count += 1;
 				self.state = "reached";
+				self.reached_service(self.reached_service);
+			'''
 			elif(self.state=="reached"):
 				self.reached_publisher.publish(self.reached_count);
-
+			'''
 if __name__=="__main__":
 	name = sys.argv[1];
 	controller = Controller(name);

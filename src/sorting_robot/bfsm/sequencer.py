@@ -26,10 +26,12 @@ class Sequencer:
 		self.name = name;
 		self.prev_reached = 0;
 		self.csm = CoordinateSpaceManager();
-		self.publisher = rospy.Publisher('/' + name + '/subgoal', Pose, queue_size=10);
-		self.reached_subscriber = rospy.Subscriber('/' + name + '/reached_subgoal', Int32, self.reached_callback);
+		#self.publisher = rospy.Publisher('/' + name + '/subgoal', Pose, queue_size=10);
+		#self.reached_subscriber = rospy.Subscriber('/' + name + '/reached_subgoal', Int32, self.reached_callback);
 		self.pose_subscriber = rospy.Subscriber('/' + name + '/odom', Odometry, self.odom_callback);
 		self.map_subscriber = rospy.Subscriber('/occupancy_map', OccupancyMap, self.map_callback);
+		self.reached_service = rospy.Service('/'name+'/reached_subgoal',ReachedService,received_ack);
+		self.goal_service = rospy.ServiceProxy('/'+name+'/subgoal',GoalService);
 		self.traffic_service = rospy.ServiceProxy('/traffic', TrafficService);
 
 	def init_map(self):
@@ -41,13 +43,22 @@ class Sequencer:
 			occupancy_map.append([False] * cols);
 		self.occupancy_map = occupancy_map;
 
+	'''
 	def reached_callback(self, data):
 		if(data.data != self.prev_reached):
 			self.state = "reached";
 			self.prev_reached = data.data;
 			print("Reached goal");
 			print(self.prev_reached);
+	'''
 
+	def received_ack(self,data):
+		reached_goal = data.count.data;
+		self.state = "reached";
+		self.prev_reached = reached_goal;
+		print("Reached goal");
+		print(self.prev_reached);
+	
 	def odom_callback(self, data):
 		pose = data.pose.pose;
 		theta = euler_from_quaternion([pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w])[2];
@@ -118,7 +129,7 @@ class Sequencer:
 			pose.position.y = world[1];
 			pose.orientation.z = world[2];
 			if(self.have_to_turn(prev,path[i])==True):
-				self.publisher.publish(pose);
+				self.goal_service(pose);
 				self.state = "moving";
 			else:
 				x = path[i].row;
@@ -140,13 +151,12 @@ class Sequencer:
 						else:
 							continue;
 				'''
-				self.publisher.publish(pose);
+				self.goal_service(pose);
 				self.state = "moving";
 			print("Published goal");
-			while(self.state == "moving"):
+			while(self.state=="moving"):
 				if(rospy.is_shutdown()==True):
 					break;
-				self.publisher.publish(pose);
 			prev = path[i];
 			if(rospy.is_shutdown()==True):
 				break;
