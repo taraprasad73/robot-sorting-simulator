@@ -6,7 +6,7 @@ from geometry_msgs.msg import Pose;
 from nav_msgs.msg import Odometry;
 from ..map_generation.generate_map_config import Cell, Direction, Turn, CellType;
 from sorting_robot.msg import State, OccupancyMap;
-from sorting_robot.srv import TrafficService;
+from sorting_robot.srv import TrafficService,GoalService,ReachedService;
 from ..utils import CoordinateSpaceManager;
 from tf.transformations import euler_from_quaternion;
 
@@ -30,7 +30,7 @@ class Sequencer:
 		#self.reached_subscriber = rospy.Subscriber('/' + name + '/reached_subgoal', Int32, self.reached_callback);
 		self.pose_subscriber = rospy.Subscriber('/' + name + '/odom', Odometry, self.odom_callback);
 		self.map_subscriber = rospy.Subscriber('/occupancy_map', OccupancyMap, self.map_callback);
-		self.reached_service = rospy.Service('/'name+'/reached_subgoal',ReachedService,received_ack);
+		self.reached_service = rospy.Service('/'+name+'/reached_subgoal',ReachedService,self.received_ack);
 		self.goal_service = rospy.ServiceProxy('/'+name+'/subgoal',GoalService);
 		self.traffic_service = rospy.ServiceProxy('/traffic', TrafficService);
 
@@ -53,11 +53,12 @@ class Sequencer:
 	'''
 
 	def received_ack(self,data):
-		reached_goal = data.count.data;
-		self.state = "reached";
-		self.prev_reached = reached_goal;
+		reached_goal = data.count;
 		print("Reached goal");
 		print(self.prev_reached);
+		self.state = "reached";
+		self.prev_reached = reached_goal;
+		return 1;
 	
 	def odom_callback(self, data):
 		pose = data.pose.pose;

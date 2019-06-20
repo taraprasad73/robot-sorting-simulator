@@ -8,6 +8,7 @@ from geometry_msgs.msg import Pose,Twist;
 from sensor_msgs.msg import LaserScan;
 from tf.transformations import euler_from_quaternion;
 from sorting_robot.msg import *;
+from sorting_robot.srv import GoalService,ReachedService;
 
 class Controller:
 	def __init__(self,name):
@@ -49,7 +50,7 @@ class Controller:
 		print("Received goal from sequencer");
 		print(self.goal);
 		self.state = "moving";
-		return;
+		return 1;
 
 	def angle_difference(self,angle1,angle2):
 		if(abs(angle1-angle2)<=3.14):
@@ -68,11 +69,11 @@ class Controller:
 			return True;
 		
 	def move(self):
-		kv = 1;
-		kw = 1;
+		kv = 2;
+		kw = 2;
 		i = 0;
 		dg = 5;
-		while(dg>0.01):
+		while(dg>0.05):
 			if not rospy.is_shutdown():
 				#print('location(x,y),dg,i: ',self.pose.position.x,self.pose.position.y,dg,i)
 				dx = self.goal.position.x-self.pose.position.x;
@@ -81,7 +82,7 @@ class Controller:
 				a2g = np.arctan2(dy,dx);
 				diff = np.arctan2(math.sin(a2g-self.theta),math.cos(a2g-self.theta));
 				dg = kv*math.sqrt(dx*dx+dy*dy);
-				if(abs(diff)>0.01):
+				if(abs(diff)>0.02):
 					self.velocity.angular.z = kw*diff;
 					self.velocity.linear.x = 0.0;
 				else:
@@ -116,7 +117,7 @@ class Controller:
 				self.move();
 				self.reached_count += 1;
 				self.state = "reached";
-				self.reached_service(self.reached_service);
+				self.reached_service(self.reached_count);
 			'''
 			elif(self.state=="reached"):
 				self.reached_publisher.publish(self.reached_count);
