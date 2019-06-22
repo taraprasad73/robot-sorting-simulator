@@ -34,9 +34,9 @@ class Heatmap:
         self.activeRobotsLock = threading.Lock()
 
     def odomCallback(self, data, robotName):
-        self.activeRobotsLock.acquire()
+        self.activeRobotsLock.acquire();
         self.activeRobots[robotName]['pose'] = data.pose.pose;
-        self.activeRobotsLock.release()
+        self.activeRobotsLock.release();
 
     def findTopics(self, data):
         topics = rospy.get_published_topics();
@@ -49,34 +49,34 @@ class Heatmap:
                 robotName = check.group()[1:len(check.group()) - 1];
                 if self.activeRobots.get(robotName) is None:
                     self.activeRobots[robotName] = {
-                        'subscriber': rospy.Subscriber(topic_name, Odometry, self.odomCallback, robotName),
-                        'pose': None
+                        'subscriber': rospy.Subscriber(topic_name, Odometry, self.odomCallback, robotName)
                     };
                 newRobots.add(robotName);
 
-        retiredRobots = []
+        retiredRobots = [];
         for robotName in self.activeRobots.keys():
             if robotName not in newRobots:
-                self.activeRobots[robotName]['subscriber'].unregister();
-                retiredRobots.append(robotName)
+                retiredRobots.append(robotName);
 
+        self.activeRobotsLock.acquire();
         for robotName in retiredRobots:
-            self.activeRobots[robotName]['subscriber'].unregister()
-            self.activeRobots.pop(robotName, None)
-        print('Active robots: {}'.format(self.activeRobots.keys()))
+            self.activeRobots[robotName]['subscriber'].unregister();
+            self.activeRobots.pop(robotName, None);
+        self.activeRobotsLock.release();
+        print('Active robots: {}'.format(self.activeRobots.keys()));
 
     def getHeatmap(self):
         occupancyMap = np.zeros(self.gridShape, dtype=bool);
         new_map = np.zeros(self.gridShape);
         activePositions = []
-        self.activeRobotsLock.acquire()
+        self.activeRobotsLock.acquire();
         for robotName in self.activeRobots.keys():
             if self.activeRobots[robotName].get('pose') is not None:
-                activePositions.append(self.activeRobots[robotName]['pose'])
-        self.activeRobotsLock.release()
+                activePositions.append(self.activeRobots[robotName]['pose']);
+        self.activeRobotsLock.release();
 
         for pose in activePositions:
-            point = (pose.position.x, pose.position.y)
+            point = (pose.position.x, pose.position.y);
             cells = self.csm.convertPointToCells(point);
             for (r, c) in cells:
                 new_map[r][c] = 1;
@@ -87,10 +87,13 @@ class Heatmap:
 
     def run(self):
         rate = rospy.Rate(HEATMAP_PUBLISH_RATE);
+        iteration = 1;
         while not rospy.is_shutdown():
             occupancyMap, heatmap = self.getHeatmap();
             self.heatmapPublisher.publish(heat_values=heatmap.flatten(), rows=self.gridShape[0], columns=self.gridShape[1]);
             self.occupancyPublisher.publish(occupancy_values=occupancyMap.flatten(), rows=self.gridShape[0], columns=self.gridShape[1]);
+            print('Iteration {}: heatmap published!'.format(iteration));
+            iteration += 1;
             rate.sleep();
 
 
