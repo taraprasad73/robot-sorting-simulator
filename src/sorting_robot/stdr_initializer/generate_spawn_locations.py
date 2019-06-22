@@ -58,7 +58,7 @@ def generateSpawnLocations(mapName, numberOfLocations):
                     print("Shell Error: " + error)
 
                 # wait for some time, so that the stdr simulator is not overloaded with requests
-                time.sleep(1)
+                time.sleep(2)
 
 
 if __name__ == "__main__":
