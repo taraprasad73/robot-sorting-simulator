@@ -2,12 +2,12 @@ import argparse;
 import rospy;
 import re;
 import os;
-import threading
+import threading;
 import numpy as np;
 from geometry_msgs.msg import Pose;
 from nav_msgs.msg import Odometry;
 from sorting_robot.msg import HeatMap, OccupancyMap;
-from ..utils import CoordinateSpaceManager, RobotInfo
+from ..utils import CoordinateSpaceManager, RobotInfo;
 
 
 HOME_DIR = os.environ['HOME']
@@ -27,32 +27,56 @@ class Heatmap:
         self.gridShape = (numRows, numColumns);
         self.heatmapPublisher = rospy.Publisher('/heat_map', HeatMap, queue_size=10);
         self.occupancyPublisher = rospy.Publisher('/occupancy_map', OccupancyMap, queue_size=10);
-        self.subscribers = [];
-        self.positions = {};
+        self.activeRobots = {};
         self.eta = 0.3;
         self.previousMap = np.zeros((numRows, numColumns));
-        rospy.Timer(rospy.Duration(TOPIC_SEARCH_INTERVAL), self.findTopics)
+        rospy.Timer(rospy.Duration(TOPIC_SEARCH_INTERVAL), self.findTopics);
+        self.activeRobotsLock = threading.Lock()
 
-    def callback(self, data, name):
-        self.positions[name] = data.pose.pose;
+    def odomCallback(self, data, robotName):
+        self.activeRobotsLock.acquire()
+        self.activeRobots[robotName]['pose'] = data.pose.pose;
+        self.activeRobotsLock.release()
 
     def findTopics(self, data):
-        subscribers = [];
         topics = rospy.get_published_topics();
+        newRobots = set()
         for topic in topics:
             topic_name, topic_type = topic;
             match = re.search("/.*/odom", topic_name);
             if(match):
                 check = re.search("/.*/", topic_name);
-                name = check.group()[1:len(check.group()) - 1];
-                subscribers.append(rospy.Subscriber(topic_name, Odometry, self.callback, name));
-        self.subscribers = subscribers;
+                robotName = check.group()[1:len(check.group()) - 1];
+                if self.activeRobots.get(robotName) is None:
+                    self.activeRobots[robotName] = {
+                        'subscriber': rospy.Subscriber(topic_name, Odometry, self.odomCallback, robotName),
+                        'pose': None
+                    };
+                newRobots.add(robotName);
+
+        retiredRobots = []
+        for robotName in self.activeRobots.keys():
+            if robotName not in newRobots:
+                self.activeRobots[robotName]['subscriber'].unregister();
+                retiredRobots.append(robotName)
+
+        for robotName in retiredRobots:
+            self.activeRobots[robotName]['subscriber'].unregister()
+            self.activeRobots.pop(robotName, None)
+        print('Active robots: {}'.format(self.activeRobots.keys()))
 
     def getHeatmap(self):
         occupancyMap = np.zeros(self.gridShape, dtype=bool);
         new_map = np.zeros(self.gridShape);
-        for key in self.positions.keys():
-            point = (self.positions[key].position.x, self.positions[key].position.y)
+        activePositions = []
+        self.activeRobotsLock.acquire()
+        for robotName in self.activeRobots.keys():
+            if self.activeRobots[robotName].get('pose') is not None:
+                activePositions.append(self.activeRobots[robotName]['pose'])
+        self.activeRobotsLock.release()
+
+        for pose in activePositions:
+            point = (pose.position.x, pose.position.y)
             cells = self.csm.convertPointToCells(point);
             for (r, c) in cells:
                 new_map[r][c] = 1;
