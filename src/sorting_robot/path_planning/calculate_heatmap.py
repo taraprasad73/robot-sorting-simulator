@@ -9,6 +9,7 @@ from nav_msgs.msg import Odometry;
 from sorting_robot.msg import HeatMap, OccupancyMap;
 from ..utils import CoordinateSpaceManager, RobotInfo
 
+
 HOME_DIR = os.environ['HOME']
 CATKIN_WORKSPACE = HOME_DIR + '/catkin_ws/'
 if os.environ.get('CATKIN_WORKSPACE'):
@@ -28,14 +29,14 @@ class Heatmap:
         self.occupancyPublisher = rospy.Publisher('/occupancy_map', OccupancyMap, queue_size=10);
         self.subscribers = [];
         self.positions = {};
-        self.findTopics();
         self.eta = 0.3;
         self.previousMap = np.zeros((numRows, numColumns));
+        rospy.Timer(rospy.Duration(TOPIC_SEARCH_INTERVAL), self.findTopics)
 
     def callback(self, data, name):
         self.positions[name] = data.pose.pose;
 
-    def findTopics(self):
+    def findTopics(self, data):
         subscribers = [];
         topics = rospy.get_published_topics();
         for topic in topics:
@@ -46,7 +47,6 @@ class Heatmap:
                 name = check.group()[1:len(check.group()) - 1];
                 subscribers.append(rospy.Subscriber(topic_name, Odometry, self.callback, name));
         self.subscribers = subscribers;
-        threading.Timer(TOPIC_SEARCH_INTERVAL, self.findTopics).start()
 
     def getHeatmap(self):
         occupancyMap = np.zeros(self.gridShape, dtype=bool);
