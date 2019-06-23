@@ -87,40 +87,67 @@ class Sequencer:
 		else:
 			return True;
 
+	def isSameCell(self,prev,curr):
+		if(prev.row==curr.row and prev.col==curr.col):
+			return True;
+		return False;
+
+	def isSameState(self,prev,curr):
+		if(prev.row==curr.row and prev.col==curr.col and prev.direction==curr.direction):
+			return True;
+		return False;
+
+	def isIntersection(self, x, y):
+		if(self.data[x][y].cellType == CellType.STREET_STREET_INTERSECTION):
+			return True;
+		elif(self.data[x][y].cellType == CellType.HIGHWAY_HIGHWAY_INTERSECTION):
+			return True;
+		if(self.data[x][y].cellType == CellType.HIGHWAY_STREET_INTERSECTION):
+			return True;
+		return False;
+
 	def process_path(self, path, k=3):
 		if(len(path) <= 1):
 			return path;
 		processed_path = [];
+		traffic_stops = [];
 		prev = path[0];
 		count = 0;
 		for i in range(0, len(path)):
+			'''
 			if(self.have_to_turn(prev, path[i]) == True):
 				processed_path.append(path[i]);
 				count = 0;
-			elif(count == k):
+			'''
+			if(self.isIntersection(path[i].row,path[i].col)):
+				if(self.isSameCell(prev,path[i])==True):
+					processed_path.append(path[i]);
+					traffic_stops.append(None);
+					count = 0;
+				elif(self.isIntersection(prev.row,prev.col)==False):
+					if(isSameState(prev,processed_path[-1])==False):
+						processed_path.append(prev);
+						traffic_stops.append(path[i]);
+						count = 1;
+					else:
+						traffic_stops[-1] = path[i];
+				else:
+					count += 1;
+			elif(count==k):
 				processed_path.append(path[i]);
+				traffic_stops.append(None);
 				count = 0;
-			elif(i == len(path) - 1):
+			elif(i==len(path)-1):
 				processed_path.append(path[i]);
+				traffic_stops.append(None);
 			else:
 				count += 1;
 			prev = path[i];
 
 		return processed_path;
 
-	def isIntersection(self, x, y):
-		if(self.data[x][y].cellType == STREET_STREET_INTERSECTION):
-			return True;
-		elif(self.data[x][y].cellType == HIGHWAY_HIGHWAY_INTERSECTION):
-			return True;
-		if(self.data[x][y].cellType == HIGHWAY_STREET_INTERSECTION):
-			return True;
-		return False;
-
 	def follow_path(self, path):
-		#path = [(46,18,90),(45,18,90),(44,18,90),(43,18,90),(42,18,90),(41,18,90),(41,18,180),(41,17,180),(41,16,180)];
-		#path = [State(p[0],p[1],p[2]) for p in path];
-		path = self.process_path(path, 5);
+		path,stops = self.process_path(path, 5);
 		prev = self.pose;
 		for i in range(0, len(path)):
 			pose = Pose();
@@ -129,15 +156,35 @@ class Sequencer:
 			pose.position.x = world[0];
 			pose.position.y = world[1];
 			pose.orientation.z = world[2];
+			'''
+			if(stops[i]==None):
+				self.goal_service(pose);
+				self.state = "moving";
+			else:
+				while(True):
+					direction = self.traffic_service(stops[i]);
+					if(prev.orientation==0 and direction.right==True):
+						break;
+					elif(prev.orientation==180 and direction.left==True):
+						break;
+					elif(prev.orientation==90 and direction.up==True):
+						break;
+					elif(prev.orientation==270 and direction.down==True):
+						break;
+					else:
+						continue;
+				self.goal_service(pose);
+				self.state = "moving";
+			'''
 			if(self.have_to_turn(prev,path[i])==True):
 				self.goal_service(pose);
 				self.state = "moving";
 			else:
+				'''
 				x = path[i].row;
 				y = path[i].col;
 				while(self.occupancy_map[x][y]==True):
 					continue;
-				'''
 				if(isIntersection(x,y)==True):
 					while(True):
 						direction = self.traffic_service(State(x,y,0));
