@@ -2,13 +2,13 @@ import argparse;
 import rospy;
 import re;
 import os;
+import logging;
 import threading;
 import numpy as np;
 from geometry_msgs.msg import Pose;
 from nav_msgs.msg import Odometry;
 from sorting_robot.msg import HeatMap, OccupancyMap;
 from ..utils import CoordinateSpaceManager, RobotInfo;
-
 
 HOME_DIR = os.environ['HOME']
 CATKIN_WORKSPACE = HOME_DIR + '/catkin_ws/'
@@ -22,7 +22,7 @@ TOPIC_SEARCH_INTERVAL = 0.5;
 
 class Heatmap:
     def __init__(self, mapName, numRows, numColumns):
-        rospy.init_node('heatmap', anonymous=False);
+        rospy.init_node('heatmap', anonymous=False, log_level=rospy.WARN);
         self.csm = CoordinateSpaceManager(mapName)
         self.gridShape = (numRows, numColumns);
         self.heatmapPublisher = rospy.Publisher('/heat_map', HeatMap, queue_size=10);
@@ -63,7 +63,7 @@ class Heatmap:
             self.activeRobots[robotName]['subscriber'].unregister();
             self.activeRobots.pop(robotName, None);
         self.activeRobotsLock.release();
-        #print('Active robots: {}'.format(self.activeRobots.keys()));
+        rospy.loginfo('Active robots: {}'.format(self.activeRobots.keys()));
 
     def getHeatmap(self):
         occupancyMap = np.zeros(self.gridShape, dtype=bool);
@@ -92,7 +92,7 @@ class Heatmap:
             occupancyMap, heatmap = self.getHeatmap();
             self.heatmapPublisher.publish(heat_values=heatmap.flatten(), rows=self.gridShape[0], columns=self.gridShape[1]);
             self.occupancyPublisher.publish(occupancy_values=occupancyMap.flatten(), rows=self.gridShape[0], columns=self.gridShape[1]);
-            #print('Iteration {}: heatmap published!'.format(iteration));
+            rospy.loginfo('Iteration {}: heatmap published!'.format(iteration));
             iteration += 1;
             rate.sleep();
 
@@ -103,8 +103,7 @@ def calculateHeatmap(mapName):
     try:
         mapConfiguration = np.load(CONFIG_FILE_LOCATION).item();
     except IOError:
-        print(CONFIG_FILE_LOCATION +
-              " doesn't exist. Run the following command to create it:\nrosrun sorting_robot generate_map_config");
+        rospy.logerror("{} doesn't exist. Run the following command to create it:\nrosrun sorting_robot generate_map_config".format(CONFIG_FILE_LOCATION));
     else:
         heatmap = Heatmap(mapName, mapConfiguration['num_rows'], mapConfiguration['num_columns']);
         print('Heatmap node is running...')
