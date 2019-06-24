@@ -9,12 +9,23 @@ from sorting_robot.srv import TrafficService;
 from ..map_generation.generate_map_config import Cell, Direction, Turn, CellType;
 
 '''
-The convention for naming the states are as follows - The first letter signifies the traffic light in the horizontal lane
-and the second light signified the traffic light in the vertical direction.
-GR - Horizontal Green and Vertical Red
-YR - Horizontal Yellow and Vertical Red
-RG - Horizontal Red and Vertical Green
-RY - Horizontal Red and Vertical Yellow
+    There are three types of intersections which require traffic supervision
+    - Street-Street
+    - Highway-Highway
+    - Highway-Street
+
+    The convention for naming the states are as follows - The first letter signifies the traffic light in the horizontal lane
+    and the second light signified the traffic light in the vertical direction.
+    GR - Horizontal Green and Vertical Red
+    YR - Horizontal Yellow and Vertical Red
+    RG - Horizontal Red and Vertical Green
+    RY - Horizontal Red and Vertical Yellow
+
+    The logic behind the changing of the traffic lights is given in the documentation. Each traffic aignal runs 
+    independently and asynchronously as a thread. 
+
+    /traffic service is called by the sequencer passing the address of the traffic signal as the argument. The traffic
+    manager fetches the traffic signal of that particular address and returns it to the sequencer. 
 '''
 
 HOME_DIR = os.environ['HOME']
@@ -188,7 +199,6 @@ class HighwaySignal:
                 while(self.is_empty() is False):
                     continue;
                 self.curr_state = 'GR';
-
 
 class HybridSignal:
     def __init__(self, row, col, rows, cols, directions, k, wait_time):
@@ -415,20 +425,26 @@ class TrafficManager:
                         signal = self.traffic_signals[(i, j)].get_signal();
                         if(signal.left == True or signal.right == True):
                             image[i][j] = colors["GREEN"];
-                        else:
+                        elif(signal.up == True or signal.down == True):
                             image[i][j] = colors["RED"];
+                        else:
+                            image[i][j] = colors["YELLOW"];
                     elif(self.data[i][j].cellType == CellType.HIGHWAY_HIGHWAY_INTERSECTION):
                         signal = self.traffic_signals[(i, j)].get_signal();
                         if(signal.left == True):
                             image[i][j] = colors["GREEN"];
-                        else:
+                        elif(signal.up == True):
                             image[i][j] = colors["RED"];
+                        else:
+                            image[i][j] = colors["YELLOW"];
                     elif(self.data[i][j].cellType == CellType.HIGHWAY_STREET_INTERSECTION):
                         signal = self.traffic_signals[(i, j)].get_signal();
                         if(signal.left == True or signal.right == True):
                             image[i][j] = colors["GREEN"];
-                        else:
+                        elif(signal.up == True or signal.down == True):
                             image[i][j] = colors["RED"];
+                        else:
+                            image[i][j] = colors["YELLOW"];
             plt.imshow(image);
             plt.draw();
             plt.pause(1e-17);
@@ -448,6 +464,7 @@ def traffic_manager(k):
         grid = mapConfiguration['grid'];
         manager = TrafficManager(k, grid);
         print("Traffic signals are running");
+        #rospy.spin();
         manager.visualize();
         manager.close();
 

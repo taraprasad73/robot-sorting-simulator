@@ -10,6 +10,27 @@ from tf.transformations import euler_from_quaternion;
 from sorting_robot.msg import *;
 from sorting_robot.srv import GoalService,ReachedService;
 
+'''
+	The controller has three states
+	idle - doing nothing
+	moving - is moving towards the current subgoal
+	reached - has reached the subgoal
+	
+	The contolller communicates with the sequencer using two services. 
+	/subgoal service is called by the sequencer to provide the next subgoal to the controller
+	/reached_subgoal is called by the controller to give an acknowledgement to the sequencer
+
+	The move() function which actually moves the robot to its goal is described below
+	kv - Constant for angular velocity of the robot
+	kw - Constant for linear velocity of the robot
+	dg - Distance of the robot from the goal
+	dx - Distance of the robot from the goal along x-axis
+	dx - Distance of the robot from the goal along t-axis
+	a2g - Angle to goal
+	diff - Difference between the robot orientation and the angle to goal
+	The first while loop is for linear movement while the next is for pure angular motion. 
+'''
+
 class Controller:
 	def __init__(self,name):
 		rospy.init_node(name+'_controller',anonymous=False);
@@ -67,7 +88,7 @@ class Controller:
 			return False;
 		else:
 			return True;
-		
+	
 	def move(self):
 		kv = 2;
 		kw = 2;
