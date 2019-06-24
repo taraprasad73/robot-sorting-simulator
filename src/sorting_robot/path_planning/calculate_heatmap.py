@@ -63,7 +63,7 @@ class Heatmap:
             self.activeRobots[robotName]['subscriber'].unregister();
             self.activeRobots.pop(robotName, None);
         self.activeRobotsLock.release();
-        print('Active robots: {}'.format(self.activeRobots.keys()));
+        #print('Active robots: {}'.format(self.activeRobots.keys()));
 
     def getHeatmap(self):
         occupancyMap = np.zeros(self.gridShape, dtype=bool);
@@ -92,7 +92,7 @@ class Heatmap:
             occupancyMap, heatmap = self.getHeatmap();
             self.heatmapPublisher.publish(heat_values=heatmap.flatten(), rows=self.gridShape[0], columns=self.gridShape[1]);
             self.occupancyPublisher.publish(occupancy_values=occupancyMap.flatten(), rows=self.gridShape[0], columns=self.gridShape[1]);
-            print('Iteration {}: heatmap published!'.format(iteration));
+            #print('Iteration {}: heatmap published!'.format(iteration));
             iteration += 1;
             rate.sleep();
 

@@ -8,7 +8,7 @@ def parseArgs():
     parser = argparse.ArgumentParser(
         description="parameters for generating binary map")
     parser.add_argument("--map-name", default='map', type=str, help="name of the map file")
-    args = parser.parse_args()
+    args,unknown = parser.parse_known_args()
     return args.map_name
 
 

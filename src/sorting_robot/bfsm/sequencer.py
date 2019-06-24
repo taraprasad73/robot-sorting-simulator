@@ -1,4 +1,5 @@
 import os;
+import time;
 import rospy;
 import numpy as np;
 from std_msgs.msg import Int32;
@@ -179,14 +180,15 @@ class Sequencer:
 				self.state = "moving";
 			else:
 				while(True):
-					direction = self.traffic_service(stops[i]);
-					if(prev.orientation==0 and direction.right==True):
+					direction = self.traffic_service(stops[i]).signal;
+					print(direction);
+					if(prev.direction==0 and direction.right==True):
 						break;
-					elif(prev.orientation==180 and direction.left==True):
+					elif(prev.direction==180 and direction.left==True):
 						break;
-					elif(prev.orientation==90 and direction.up==True):
+					elif(prev.direction==90 and direction.up==True):
 						break;
-					elif(prev.orientation==270 and direction.down==True):
+					elif(prev.direction==270 and direction.down==True):
 						break;
 					time.sleep(1);
 				self.goal_service(pose);

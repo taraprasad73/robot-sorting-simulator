@@ -56,6 +56,7 @@ class StreetSignal:
         signal.right = False;
         signal.up = False;
         signal.down = False;
+        print(self.curr_state);
         if(self.curr_state == 'GR'):
             if(self.horizontal == Direction.LEFT):
                 signal.left = True;
@@ -111,7 +112,7 @@ class StreetSignal:
                     time.sleep(self.wait_time);
                     self.curr_state = 'YR';
             elif(self.curr_state == 'YR'):
-                while(self.is_empty() is False):
+                while(self.is_empty()==False and not rospy.is_shutdown()):
                     continue;
                 self.curr_state = 'RG';
             elif(self.curr_state == 'RG'):
@@ -348,7 +349,7 @@ class TrafficManager:
 
     def get_traffic_signal(self, req):
         x, y = req.location.row, req.location.col;
-        if(self.data[x][y].cellType == HIGHWAY_HIGHWAY_INTERSECTION):
+        if(self.data[x][y].cellType == CellType.HIGHWAY_HIGHWAY_INTERSECTION):
             signal = self.traffic_signals[(x, y)].get_signal();
             if(signal.left == True and signal.right == True):
                 if(Direction.LEFT in self.data[x][y].directions):
@@ -362,18 +363,19 @@ class TrafficManager:
                     signal.up = False;
             return signal;
         else:
-            return self.traffic_signals[(x, y)].get_signal();
+            signal = self.traffic_signals[(x, y)].get_signal() 
+            return signal;
 
-    def map_callback(self):
+    def map_callback(self, data):
         global occupancy_map;
-        rows = self.data.rows;
-        cols = self.data.cols;
+        rows = data.rows;
+        cols = data.columns;
         new_map = [];
         k = 0;
         for i in range(0, rows):
             temp = [];
             for j in range(0, cols):
-                temp.append(self.data.occupancy_values[k]);
+                temp.append(data.occupancy_values[k]);
                 k += 1;
             new_map.append(temp);
         occupancy_map = new_map;
@@ -464,8 +466,8 @@ def traffic_manager(k):
         grid = mapConfiguration['grid'];
         manager = TrafficManager(k, grid);
         print("Traffic signals are running");
-        #rospy.spin();
-        manager.visualize();
+        rospy.spin();
+        #manager.visualize();
         manager.close();
 
 
