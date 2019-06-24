@@ -56,7 +56,6 @@ class StreetSignal:
         signal.right = False;
         signal.up = False;
         signal.down = False;
-        print(self.curr_state);
         if(self.curr_state == 'GR'):
             if(self.horizontal == Direction.LEFT):
                 signal.left = True;
@@ -361,9 +360,11 @@ class TrafficManager:
                     signal.down = False;
                 else:
                     signal.up = False;
+            print(signal);
             return signal;
         else:
             signal = self.traffic_signals[(x, y)].get_signal() 
+            print(signal);
             return signal;
 
     def map_callback(self, data):

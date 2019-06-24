@@ -77,7 +77,6 @@ class Sequencer:
 	def received_ack(self,data):
 		reached_goal = data.count;
 		print("Reached goal");
-		print(self.prev_reached);
 		self.state = "reached";
 		self.prev_reached = reached_goal;
 		return 1;
@@ -179,6 +178,7 @@ class Sequencer:
 				self.goal_service(pose);
 				self.state = "moving";
 			else:
+				'''
 				while(True):
 					direction = self.traffic_service(stops[i]).signal;
 					print(direction);
@@ -191,6 +191,7 @@ class Sequencer:
 					elif(prev.direction==270 and direction.down==True):
 						break;
 					time.sleep(1);
+				'''
 				self.goal_service(pose);
 				self.state = "moving";
 			'''

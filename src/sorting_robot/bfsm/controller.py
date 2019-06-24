@@ -90,8 +90,8 @@ class Controller:
 			return True;
 	
 	def move(self):
-		kv = 2;
-		kw = 2;
+		kv = 1;
+		kw = 1;
 		i = 0;
 		dg = 5;
 		while(dg>0.05):
@@ -115,6 +115,8 @@ class Controller:
 					self.publisher.publish(self.velocity);
 				else:
 					self.publisher.publish(self.velocity);
+			else:
+				break;
 		while(1):
 			if not rospy.is_shutdown():
 				diff = self.angle_difference(self.goal.orientation.z,self.theta);
@@ -123,6 +125,8 @@ class Controller:
 				self.velocity.angular.z = kw*diff;
 				self.velocity.linear.x = 0.0;
 				self.publisher.publish(self.velocity);
+			else:
+				break;
 		self.rate.sleep();
 		self.velocity.linear.x = 0
 		self.velocity.angular.z = 0

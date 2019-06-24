@@ -1,6 +1,6 @@
 <launch>
-  <node pkg="sorting_robot" type="heatmap" name="heatmap" output="screen"/>
+  <!-- <node pkg="sorting_robot" type="heatmap" name="heatmap" output="screen"/> -->
   <node pkg="sorting_robot" type="path_planner" name="path_planner" output="screen"/>
   <node pkg="sorting_robot" type="pickup_manager" name="pickup_manager" output="screen"/>
-  <node pkg="sorting_robot" type="traffic_manager" name="traffic_manager" args="5" output="screen"/>
+  <!-- <node pkg="sorting_robot" type="traffic_manager" name="traffic_manager" args="5" output="screen"/> -->
 </launch>
