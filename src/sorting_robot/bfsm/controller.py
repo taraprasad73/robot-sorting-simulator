@@ -90,8 +90,8 @@ class Controller:
 			return True;
 	
 	def move(self):
-		kv = 1;
-		kw = 1;
+		kv = 2;
+		kw = 2;
 		i = 0;
 		dg = 5;
 		while(dg>0.05):
@@ -102,7 +102,7 @@ class Controller:
 				#print("goal coordinates: ",self.goal.position.x,self.goal.position.y)
 				a2g = np.arctan2(dy,dx);
 				diff = np.arctan2(math.sin(a2g-self.theta),math.cos(a2g-self.theta));
-				dg = kv*math.sqrt(dx*dx+dy*dy);
+				dg = math.sqrt(dx*dx+dy*dy);
 				if(abs(diff)>0.02):
 					self.velocity.angular.z = kw*diff;
 					self.velocity.linear.x = 0.0;

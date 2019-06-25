@@ -178,10 +178,8 @@ class Sequencer:
 				self.goal_service(pose);
 				self.state = "moving";
 			else:
-				'''
 				while(True):
 					direction = self.traffic_service(stops[i]).signal;
-					print(direction);
 					if(prev.direction==0 and direction.right==True):
 						break;
 					elif(prev.direction==180 and direction.left==True):
@@ -191,7 +189,6 @@ class Sequencer:
 					elif(prev.direction==270 and direction.down==True):
 						break;
 					time.sleep(1);
-				'''
 				self.goal_service(pose);
 				self.state = "moving";
 			'''
