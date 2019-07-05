@@ -13,6 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
   nav_msgs
   rospy
   std_msgs
+  geometry_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -67,6 +68,8 @@ add_service_files(
   TrafficService.srv
   GetPickup.srv
   MakePickup.srv
+  GoalService.srv
+  ReachedService.srv
 )
 
 ## Generate actions in the 'action' folder

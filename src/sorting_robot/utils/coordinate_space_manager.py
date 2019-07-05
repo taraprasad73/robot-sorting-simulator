@@ -1,5 +1,7 @@
 import os
 import math
+import logging
+import rospy
 import numpy as np
 from ..map_generation.generate_map_config import Cell, Direction
 from robot_info import RobotInfo
@@ -10,9 +12,14 @@ if os.environ.get('CATKIN_WORKSPACE'):
     CATKIN_WORKSPACE = os.environ['CATKIN_WORKSPACE']
 CONFIG_FILE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/{}_configuration.npy'
 
-# percent of the cell length to be added at each boundary
-# if 10% is used, 0.9 to 0.1 will be counted as both 0+ and 1+ and 1.0 to 1.1 will be counted as both 1+ and 0+
-BOUNDARY_CROSSING_TOLERANCE_PERCENT = 40
+'''
+percent of the cell length to be added at each boundary
+if 10% is used, 0.9 to 1 will be counted as both 0+ and 1+ and 1.0 to 1.1 will be counted as both 1+ and 0+
+Example: For cell length: 0.5 m, robot radius: 0.2 m,
+if 9% is used, then it will show that none of the boundaries haven't been crossed
+if 11% is used, then it will show that all the 4 boundaries have been crossed
+'''
+BOUNDARY_CROSSING_TOLERANCE_PERCENT = 1
 
 # tolerance to be used (in degrees) while converting degrees to direction
 # if tolerance is 10 degrees, then UP refers to angles between 80 and 100 exclusive
@@ -53,7 +60,7 @@ class CoordinateSpaceManager:
         col = int(x // self.cellLength)
         row = self.numRowsInGrid - int(y // self.cellLength) - 1
 
-        theta = math.degrees(theta) if(theta>0) else math.degrees(theta)+360
+        theta = math.degrees(theta) if(theta > 0) else math.degrees(theta) + 360
         # check cyclic cases properly
         direction = None
         if 360 - ORIENTATION_TOLERANCE < theta <= 360 or 0 <= theta < 0 + ORIENTATION_TOLERANCE:
@@ -72,14 +79,21 @@ class CoordinateSpaceManager:
         col = int(x // self.cellLength)
         row = self.numRowsInGrid - int(y // self.cellLength) - 1
         lowerLeftPoint = self.getLowerLeftCornerWorldCoordinate((row, col))
-
-        BOUNDARY_CROSSING_TOLERANCE_LENGTH = BOUNDARY_CROSSING_TOLERANCE_PERCENT / 100 * self.cellLength
+        BOUNDARY_CROSSING_TOLERANCE_LENGTH = BOUNDARY_CROSSING_TOLERANCE_PERCENT / 100.0 * self.cellLength
+        rospy.logdebug('BOUNDARY_TOLERANCE: {}'.format(BOUNDARY_CROSSING_TOLERANCE_LENGTH))
         X_LOWER_LIMIT = lowerLeftPoint[0] + BOUNDARY_CROSSING_TOLERANCE_LENGTH
         X_UPPER_LIMIT = lowerLeftPoint[0] + self.cellLength - BOUNDARY_CROSSING_TOLERANCE_LENGTH
         Y_LOWER_LIMIT = lowerLeftPoint[1] + BOUNDARY_CROSSING_TOLERANCE_LENGTH
         Y_UPPER_LIMIT = lowerLeftPoint[1] + self.cellLength - BOUNDARY_CROSSING_TOLERANCE_LENGTH
         robotRadius = RobotInfo.getRobotRadiusInMeters()
 
+        rospy.logdebug('x: {} y: {}'.format(x, y))
+        rospy.logdebug('row: {} col: {}'.format(row, col))
+        rospy.logdebug('lower_left_point: {}'.format(lowerLeftPoint))
+        rospy.logdebug('LIMITS:- X_LOWER: {}, X_UPPER: {}, Y_LOWER: {}, Y_UPPER: {}'.format(X_LOWER_LIMIT, X_UPPER_LIMIT, Y_LOWER_LIMIT, Y_UPPER_LIMIT))
+        rospy.logdebug('Robot Radius: {}'.format(robotRadius))
+        rospy.logdebug('ACTUAL:- X_LOWER: {}, X_UPPER: {}, Y_LOWER: {}, Y_UPPER: {}'.format(x - robotRadius, x + robotRadius,
+                                                                                            y - robotRadius, y + robotRadius))
         cells = []
         cells.append((row, col))
         if x - robotRadius < X_LOWER_LIMIT:
@@ -94,6 +108,7 @@ class CoordinateSpaceManager:
         if y + robotRadius > Y_UPPER_LIMIT:
             if row - 1 >= 0:
                 cells.append((row - 1, col))
+        rospy.logdebug('Cells Occupied: {}'.format(cells))
         return cells
 
     # returns the coordinates of the mid point of the cell in world coordinates
@@ -104,8 +119,8 @@ class CoordinateSpaceManager:
         theta = None
         if len(cell) > 2:
             theta = math.radians(cell[2])
-            if(theta>math.pi):
-                theta = theta-2*math.pi
+            if(theta > math.pi):
+                theta = theta - 2 * math.pi
         else:
             if len(self.grid[r][c].directions) > 0:
                 # select any one direction from the list of valid directions arbitrarily

@@ -10,6 +10,7 @@ if os.environ.get('CATKIN_WORKSPACE'):
     CATKIN_WORKSPACE = os.environ['CATKIN_WORKSPACE']
 CONFIG_FILE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/{}_configuration.npy'
 BINARY_GRID_IMAGE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/{}_binary_grid.png'
+BINARY_GRID_IMAGE_LOCATION_STDR = CATKIN_WORKSPACE + '/src/sorting_robot/stdr_data/maps/{}_binary_grid.png'
 
 
 def saveDataToImage(data, filename):
@@ -23,9 +24,10 @@ def saveDataToImage(data, filename):
 
 
 def generateBinaryMap(mapName, pixelToCellRatio):
-    global CONFIG_FILE_LOCATION, BINARY_GRID_IMAGE_LOCATION
+    global CONFIG_FILE_LOCATION, BINARY_GRID_IMAGE_LOCATION, BINARY_GRID_IMAGE_LOCATION_STDR
     CONFIG_FILE_LOCATION = CONFIG_FILE_LOCATION.format(mapName)
     BINARY_GRID_IMAGE_LOCATION = BINARY_GRID_IMAGE_LOCATION.format(mapName)
+    BINARY_GRID_IMAGE_LOCATION_STDR = BINARY_GRID_IMAGE_LOCATION_STDR.format(mapName)
     try:
         mapConfiguration = np.load(CONFIG_FILE_LOCATION).item()
     except IOError:
@@ -43,6 +45,7 @@ def generateBinaryMap(mapName, pixelToCellRatio):
                         row + 1) * pixelToCellRatio, col * pixelToCellRatio: (col + 1) * pixelToCellRatio] = False
 
         saveDataToImage(enlargedBinaryGrid, BINARY_GRID_IMAGE_LOCATION)
+        saveDataToImage(enlargedBinaryGrid, BINARY_GRID_IMAGE_LOCATION_STDR)
 
 
 if __name__ == '__main__':

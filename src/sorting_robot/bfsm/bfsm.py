@@ -8,11 +8,30 @@ from geometry_msgs.msg import Pose;
 from std_msgs.msg import String;
 from sequencer import *;
 
+'''
+	The BFSM acts as the overall highest level of control of the program. It purely deals with the different
+	states the robot can exist in.
+	- "select_pickup" - The init state and also the state where the robot has to select a pickup station 
+	   and go receive the package.
+	- "go_to_pickup" - Receive the path to pickup station from the path planner and call the sequencer to move.
+	- "making_pickup" - Reached the pickup station - Receive the package and the bin address.
+	- "go_to_bin - Receive the path to bin from the path planner and go to the bin by calling the sequencer"
+	- "make_the_drop" - Drop the package in the bin and change state to select_pickup. 
+	
+	The BFSM creates an instance of the sequencer and calls the follow_path method to move the robot to the goal
+	The BFSM communicates with the path planner and the pickup manager
+	/path - Get the path to the pickup point from the path planner.
+	/path_to_bin - Get the path to the bin from the path planner.
+	/pickup_location - Get the pickup point location from the pickup manager
+	/make_pickup - Make the pickup at the pickup point from the pickup manager
+	
+	The charging parts can be added here eventually
+'''
 class BFSM:
 	def __init__(self,name):
 		rospy.init_node(name+'_bfsm',anonymous=False);
 		self.state = "select_pickup";
-		self.possible_states = ["go_to_pickup","select_pickup","making_pickup","make_the_drop","go_to_charge","select_charge","charging"];
+		self.possible_states = ["go_to_pickup","select_pickup","making_pickup","go_to_bin","make_the_drop","go_to_charge","select_charge","charging"];
 		self.name = name;
 		self.pose = State();
 		self.pickup_location = State();
@@ -59,7 +78,6 @@ class BFSM:
 				print("Received the address of the pickup");
 				self.pickup_location = pickup_message.location;
 				self.pickup_id = pickup_message.pickup_id;
-				print(self.pickup_location);
 				self.state = "go_to_pickup";
 			elif(self.state=="make_the_pickup"):
 				print("Making the Pickup");

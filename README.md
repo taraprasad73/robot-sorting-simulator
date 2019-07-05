@@ -124,7 +124,24 @@ Any launch file can be executed as rosrun sorting_robot name_of_launch_file [com
     Terminal 2: rosrun sorting_robot bfsm [robot_name]
     ~~~~
     The commands will be extended to use roslaunch for multiple robots. 
+## Launch Heatmap, Path Planner, Pickup Manager and Traffic Manager
+-----
+ - Launch all the above using one command
+    ~~~~
+    Terminal 1: roslaunch sorting_robot modules.launch
+    ~~~~
 
+## Launch the entire sorting_robot system
+-----
+ - The following commands are run one after another
+   ~~~~
+   Terminal 1: roslaunch sorting_robot stdr_server_with_map_and_gui.launch
+   Terminal 2: rosrun sorting_robot generate_spawn_locations [num_of_robots_to_spawn]
+   Terminal 3: roslaunch sorting_robot modules.launch
+   Terminal 4: rosrun sorting_robot controller [robot_name]
+   Terminal 5: rosrun sorting_robot bfsm [robot_name]
+   ~~~~
+   
 ## Code Formatter Settings for Visual Studio Code
 -----
 
