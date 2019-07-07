@@ -30,7 +30,7 @@ from ..map_generation.generate_map_config import Cell, Direction, Turn, CellType
 
 HOME_DIR = os.environ['HOME']
 CATKIN_WORKSPACE = HOME_DIR + '/catkin_ws/'
-if os.environ['CATKIN_WORKSPACE']:
+if os.environ.get('CATKIN_WORKSPACE'):
     CATKIN_WORKSPACE = os.environ['CATKIN_WORKSPACE']
 CONFIG_FILE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/map_configuration.npy'
 occupancy_map = [];
