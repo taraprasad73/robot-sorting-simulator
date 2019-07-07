@@ -1,7 +1,3 @@
-'''
-TODO add color coded legend, pick a different color for each cell type
-'''
-
 import numpy as np
 import os
 from matplotlib.font_manager import FontProperties

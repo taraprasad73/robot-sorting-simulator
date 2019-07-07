@@ -38,14 +38,13 @@ class Controller:
         self.pose = Pose();
         self.goal = Pose();
         self.velocity = Twist();
-        self.laser_scan = [5.0] * 180;
         self.theta = 0;
         self.reached_count = 0;
         self.name = name;
         self.state = "idle";
         self.possible_states = ["idle", "moving", "reached"];
         self.pose_subscriber = rospy.Subscriber('/' + name + '/odom', Odometry, self.odom_callback);
-        self.laser_subscriber = rospy.Subscriber('/' + name + '/laser_0', LaserScan, self.laser_callback);
+        # self.laser_subscriber = rospy.Subscriber('/' + name + '/laser_0', LaserScan, self.laser_callback);
         self.goal_service = rospy.Service('/' + name + '/subgoal', GoalService, self.receive_goal);
         self.reached_service = rospy.ServiceProxy('/' + name + '/reached_subgoal', ReachedService);
         self.publisher = rospy.Publisher('/' + name + '/cmd_vel', Twist, queue_size=10);
@@ -55,6 +54,7 @@ class Controller:
         self.pose = data.pose.pose;
         self.theta = euler_from_quaternion([self.pose.orientation.x, self.pose.orientation.y,
                                             self.pose.orientation.z, self.pose.orientation.w])[2];
+        # print('odom callback: pose={} theta={}'.format(self.pose.position, self.theta))
 
     def laser_callback(self, data):
         self.laser_scan = list(data.ranges);
@@ -88,10 +88,9 @@ class Controller:
         kw = 2;
         dg = 5;
         while(not rospy.is_shutdown() and dg > 0.05):
-            # print('location(x,y),dg,i: ',self.pose.position.x,self.pose.position.y,dg,i)
             dx = self.goal.position.x - self.pose.position.x;
             dy = self.goal.position.y - self.pose.position.y;
-            # print("goal coordinates: ",self.goal.position.x,self.goal.position.y)
+            print('pose: ({}, {}) goal: ({}, {})'.format(self.pose.position.x, self.pose.position.y, self.goal.position.x, self.goal.position.y))
             a2g = np.arctan2(dy, dx);
             diff = np.arctan2(math.sin(a2g - self.theta), math.cos(a2g - self.theta));
             dg = math.sqrt(dx * dx + dy * dy);
@@ -101,12 +100,7 @@ class Controller:
             else:
                 self.velocity.linear.x = kv * math.sqrt(dx * dx + dy * dy);
                 self.velocity.angular.z = 0.0;
-            if(min(self.laser_scan) <= 0.0):
-                self.velocity.linear.x = 0;
-                self.velocity.angular.z = 0;
-                self.publisher.publish(self.velocity);
-            else:
-                self.publisher.publish(self.velocity);
+            self.publisher.publish(self.velocity);
         while(not rospy.is_shutdown()):
             diff = self.angle_difference(self.goal.orientation.z, self.theta);
             if(abs(diff) <= 0.1):

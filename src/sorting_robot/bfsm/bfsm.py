@@ -73,6 +73,7 @@ class BFSM:
             if(self.state == "go_to_pickup"):
                 path = self.path_service(self.pose, self.pickup_location);
                 print("Received path from the planner to pickup");
+                print(path.path)
                 self.sequencer.follow_path(path.path);
                 self.state = "make_the_pickup";
             elif(self.state == "select_pickup"):

@@ -14,13 +14,13 @@ if os.environ.get('CATKIN_WORKSPACE'):
     CATKIN_WORKSPACE = os.environ['CATKIN_WORKSPACE']
 CONFIG_FILE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/map_configuration.npy'
 
-'''
+"""
 The pickup manager deals with the pickcup related communications.
-/pickup_location - When a robot makes a call for the pickup location. 
-                    The location of the queue with the least amount of robots is provided. The robot is added to that queue.
+/pickup_location - When a robot makes a call for the pickup location, the location of the queue with
+                    the least amount of robots is provided. The robot is added to that queue.
 /make_pickup - The package is transferred onto the robot currently at the piclup point and the destination
                 address is provided. The robot is removed from the queue.
-'''
+"""
 
 
 class PickupQueue:
