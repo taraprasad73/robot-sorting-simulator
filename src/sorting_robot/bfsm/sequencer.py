@@ -127,7 +127,7 @@ class Sequencer:
 			return True;
 		return False;
 
-	def process_path(self, path, k=5):
+	def process_path_k(self, path, k=5):
 		if(len(path) <= 1):
 			return path;
 		processed_path = [];
@@ -140,7 +140,7 @@ class Sequencer:
 				processed_path.append(path[i]);
 				count = 0;
 			'''
-			if(self.isIntersection(path[i].row,path[i].col)):
+			if(self.isIntersection(path[i].row,path[i].col)==True):
 				if(self.isSameCell(prev,path[i])==True):
 					processed_path.append(path[i]);
 					traffic_stops.append(None);
@@ -164,8 +164,25 @@ class Sequencer:
 
 		return processed_path,traffic_stops;
 
+	def process_path(self, path):
+		if(len(path)<=1):
+			return path;
+		processed_path = [];
+		traffic_stops = [];
+		prev = path[0];
+		for i in range(1,len(path)):
+			if(self.isSameCell(prev,path[i])):
+				processed_path.append(path[i]);
+				traffic_stops.append(None);
+			if(self.isIntersection(path[i].row,path[i].col)==True and self.isIntersection(prev.row,prev.col==False)):
+				processed_path.append(prev);
+				traffic_stops.append(path[i]);
+			prev = path[i];
+
+		return processed_path,traffic_stops;
+
 	def follow_path(self, path):
-		path,stops = self.process_path(path, 5);
+		path,stops = self.process_path(path);
 		prev = self.pose;
 		for i in range(0, len(path)):
 			pose = Pose();
