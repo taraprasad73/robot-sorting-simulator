@@ -9,23 +9,23 @@ from sorting_robot.srv import TrafficService;
 from ..map_generation.generate_map_config import Cell, Direction, Turn, CellType;
 
 '''
-    There are three types of intersections which require traffic supervision
-    - Street-Street
-    - Highway-Highway
-    - Highway-Street
+There are three types of intersections which require traffic supervision
+- Street-Street
+- Highway-Highway
+- Highway-Street
 
-    The convention for naming the states are as follows - The first letter signifies the traffic light in the horizontal lane
-    and the second light signified the traffic light in the vertical direction.
-    GR - Horizontal Green and Vertical Red
-    YR - Horizontal Yellow and Vertical Red
-    RG - Horizontal Red and Vertical Green
-    RY - Horizontal Red and Vertical Yellow
+The convention for naming the states are as follows - The first letter signifies the traffic light in the horizontal lane
+and the second light signified the traffic light in the vertical direction.
+GR - Horizontal Green and Vertical Red
+YR - Horizontal Yellow and Vertical Red
+RG - Horizontal Red and Vertical Green
+RY - Horizontal Red and Vertical Yellow
 
-    The logic behind the changing of the traffic lights is given in the documentation. Each traffic aignal runs 
-    independently and asynchronously as a thread. 
+The logic behind the changing of the traffic lights is given in the documentation. Each traffic aignal runs 
+independently and asynchronously as a thread. 
 
-    /traffic service is called by the sequencer passing the address of the traffic signal as the argument. The traffic
-    manager fetches the traffic signal of that particular address and returns it to the sequencer. 
+/traffic service is called by the sequencer passing the address of the traffic signal as the argument. The traffic
+manager fetches the traffic signal of that particular address and returns it to the sequencer. 
 '''
 
 HOME_DIR = os.environ['HOME']
@@ -69,7 +69,7 @@ class StreetSignal:
         return signal;
 
     def is_empty(self):
-        if(occupancy_map[self.row][self.col] == True):
+        if(occupancy_map[self.row][self.col] is True):
             return False;
         else:
             return True;
@@ -111,7 +111,7 @@ class StreetSignal:
                     time.sleep(self.wait_time);
                     self.curr_state = 'YR';
             elif(self.curr_state == 'YR'):
-                while(self.is_empty()==False and not rospy.is_shutdown()):
+                while(self.is_empty() is False and not rospy.is_shutdown()):
                     continue;
                 self.curr_state = 'RG';
             elif(self.curr_state == 'RG'):
@@ -200,6 +200,7 @@ class HighwaySignal:
                     continue;
                 self.curr_state = 'GR';
 
+
 class HybridSignal:
     def __init__(self, row, col, rows, cols, directions, k, wait_time):
         self.row = row;
@@ -243,7 +244,7 @@ class HybridSignal:
         return signal;
 
     def is_empty(self):
-        if(occupancy_map[self.row][self.col] == True):
+        if(occupancy_map[self.row][self.col] is True):
             return False;
         else:
             return True;
@@ -350,12 +351,12 @@ class TrafficManager:
         x, y = req.location.row, req.location.col;
         if(self.data[x][y].cellType == CellType.HIGHWAY_HIGHWAY_INTERSECTION):
             signal = self.traffic_signals[(x, y)].get_signal();
-            if(signal.left == True and signal.right == True):
+            if(signal.left is True and signal.right is True):
                 if(Direction.LEFT in self.data[x][y].directions):
                     signal.right = False;
                 else:
                     signal.left = False;
-            elif(signal.up == True and signal.down == True):
+            elif(signal.up is True and signal.down is True):
                 if(Direction.UP in self.data[x][y].directions):
                     signal.down = False;
                 else:
@@ -363,7 +364,7 @@ class TrafficManager:
             print(signal);
             return signal;
         else:
-            signal = self.traffic_signals[(x, y)].get_signal() 
+            signal = self.traffic_signals[(x, y)].get_signal()
             print(signal);
             return signal;
 
@@ -426,25 +427,25 @@ class TrafficManager:
                 for j in range(0, cols):
                     if(self.data[i][j].cellType == CellType.STREET_STREET_INTERSECTION):
                         signal = self.traffic_signals[(i, j)].get_signal();
-                        if(signal.left == True or signal.right == True):
+                        if(signal.left is True or signal.right is True):
                             image[i][j] = colors["GREEN"];
-                        elif(signal.up == True or signal.down == True):
+                        elif(signal.up is True or signal.down is True):
                             image[i][j] = colors["RED"];
                         else:
                             image[i][j] = colors["YELLOW"];
                     elif(self.data[i][j].cellType == CellType.HIGHWAY_HIGHWAY_INTERSECTION):
                         signal = self.traffic_signals[(i, j)].get_signal();
-                        if(signal.left == True):
+                        if(signal.left is True):
                             image[i][j] = colors["GREEN"];
-                        elif(signal.up == True):
+                        elif(signal.up is True):
                             image[i][j] = colors["RED"];
                         else:
                             image[i][j] = colors["YELLOW"];
                     elif(self.data[i][j].cellType == CellType.HIGHWAY_STREET_INTERSECTION):
                         signal = self.traffic_signals[(i, j)].get_signal();
-                        if(signal.left == True or signal.right == True):
+                        if(signal.left is True or signal.right is True):
                             image[i][j] = colors["GREEN"];
-                        elif(signal.up == True or signal.down == True):
+                        elif(signal.up is True or signal.down is True):
                             image[i][j] = colors["RED"];
                         else:
                             image[i][j] = colors["YELLOW"];
@@ -468,7 +469,7 @@ def traffic_manager(k):
         manager = TrafficManager(k, grid);
         print("Traffic signals are running");
         rospy.spin();
-        #manager.visualize();
+        # manager.visualize();
         manager.close();
 
 
