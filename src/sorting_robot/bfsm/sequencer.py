@@ -33,7 +33,7 @@ by the path_planner into a set of subgoals.
  - Every turn/intersection becomes a subgoal
  - The robot can move straight ahead upto k steps
 
-The follow_path() function actually communicates with the controller by providing subgoals and receiving 
+The follow_path() function actually communicates with the controller by providing subgoals and receiving
 acknoledgements for the same. When at intersections, it communicates with the traffic manager. This function
 is called by the BFSM.
 '''
