@@ -145,10 +145,10 @@ Any launch file can be executed as rosrun sorting_robot name_of_launch_file [com
    Terminal 5: roslaunch sorting_robot bfsms.launch
    ~~~~
    
-## Code Formatter Settings for Visual Studio Code
+## Coding Standards
 -----
-
-### Linter standard used
+Use Visual Studio Code as the editor and pep8 as the linter for python and autopep8 for autoformatting.
+### Linter used
  - **pep8** with E501, E703 and E402 disabled
  - **E501** - places a limit on the length of a line of code
  - **E703** - doesn't allow semicolon at the end of a statement
