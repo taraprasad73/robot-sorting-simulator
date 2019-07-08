@@ -20,16 +20,24 @@ The contolller communicates with the sequencer using two services.
 /subgoal service is called by the sequencer to provide the next subgoal to the controller
 /reached_subgoal is called by the controller to give an acknowledgement to the sequencer
 
-The move() function which actually moves the robot to its goal is described below
-kv - Constant for linear velocity of the robot
-kw - Constant for angular velocity of the robot
+The moveToGoal() function which actually moves the robot to its goal is described below
+LINEAR_VELOCITY_MULTIPLIER - Constant for linear velocity of the robot
+ANGUALR_VELOCITY_MULTIPLIER - Constant for angular velocity of the robot
 dg - Distance of the robot from the goal
 dx - Distance of the robot from the goal along x-axis
 dy - Distance of the robot from the goal along y-axis
-a2g - Angle to goal
-diff - Difference between the robot orientation and the angle to goal
+angleToGoal - Angle to goal
+angleToTurn - Difference between the robot orientation and the angleToGoal.
+angleToRotate - Angle to rotate so as to aling the robot with the goal's orientation
 The first while loop is for linear movement while the next is for pure angular motion.
 '''
+
+MAX_LINEAR_VELOCITY = 1  # in m/s
+GOAL_REACHED_TOLERANCE = 0.001  # in m
+ANGLE_REACHED_TOLERANCE = 0.001  # in radians
+LINEAR_VELOCITY_MULTIPLIER = 0.5
+ANGUALR_VELOCITY_MULTIPLIER = 0.5
+VELOCITY_PUBLISH_RATE = 1
 
 
 class Controller:
@@ -38,22 +46,21 @@ class Controller:
         self.pose = Pose();
         self.goal = Pose();
         self.velocity = Twist();
-        self.theta = 0;
+        self.robotHeading = 0;
         self.reached_count = 0;
         self.name = name;
         self.state = "idle";
         self.possible_states = ["idle", "moving", "reached"];
         self.pose_subscriber = rospy.Subscriber('/' + name + '/odom', Odometry, self.odom_callback);
-        # self.laser_subscriber = rospy.Subscriber('/' + name + '/laser_0', LaserScan, self.laser_callback);
         self.goal_service = rospy.Service('/' + name + '/subgoal', GoalService, self.receive_goal);
         self.reached_service = rospy.ServiceProxy('/' + name + '/reached_subgoal', ReachedService);
-        self.publisher = rospy.Publisher('/' + name + '/cmd_vel', Twist, queue_size=10);
-        self.rate = rospy.Rate(1);
+        self.velocityPublisher = rospy.Publisher('/' + name + '/cmd_vel', Twist, queue_size=10);
+        self.velocityPublishRate = rospy.Rate(VELOCITY_PUBLISH_RATE);
 
     def odom_callback(self, data):
         self.pose = data.pose.pose;
-        self.theta = euler_from_quaternion([self.pose.orientation.x, self.pose.orientation.y,
-                                            self.pose.orientation.z, self.pose.orientation.w])[2];
+        self.robotHeading = euler_from_quaternion([self.pose.orientation.x, self.pose.orientation.y,
+                                                   self.pose.orientation.z, self.pose.orientation.w])[2];
         # print('odom callback: pose={} theta={}'.format(self.pose.position, self.theta))
 
     def laser_callback(self, data):
@@ -61,57 +68,56 @@ class Controller:
 
     def receive_goal(self, data):
         self.goal = data.goal
-        print("Received goal from sequencer");
-        print(self.goal);
+        print("Received goal from sequencer: ({:0.3f} {:0.3f} {})".format(self.goal.position.x, self.goal.position.y, self.goal.orientation.z));
         self.state = "moving";
         return 1;
 
     def angle_difference(self, angle1, angle2):
-        if(abs(angle1 - angle2) <= 3.14):
+        if(abs(angle1 - angle2) <= math.pi):
             return angle1 - angle2;
-        elif((angle1 - angle2) > 3.14):
-            return -(6.28 - (angle1 - angle2));
+        elif((angle1 - angle2) > math.pi):
+            return -(2 * math.pi - (angle1 - angle2));
         else:
-            return 6.28 + (angle1 - angle2);
+            return 2 * math.pi + (angle1 - angle2);
 
-    def new_goal(self, data):
-        dist = math.sqrt(math.pow(data.position.x - self.goal.position.x, 2) +
-                         math.pow(data.position.y - self.goal.position.y, 2));
-        diff = self.angle_difference(data.orientation.z, self.goal.orientation.z);
-        if(dist <= 0.1 and abs(diff) <= 0.01):
-            return False;
-        else:
-            return True;
-
-    def move(self):
-        kv = 2;
-        kw = 2;
-        dg = 5;
-        while(not rospy.is_shutdown() and dg > 0.05):
+    def moveToGoal(self):
+        # make the robot reach the position of the current goal
+        while(not rospy.is_shutdown()):
             dx = self.goal.position.x - self.pose.position.x;
             dy = self.goal.position.y - self.pose.position.y;
-            print('pose: ({}, {}) goal: ({}, {})'.format(self.pose.position.x, self.pose.position.y, self.goal.position.x, self.goal.position.y))
-            a2g = np.arctan2(dy, dx);
-            diff = np.arctan2(math.sin(a2g - self.theta), math.cos(a2g - self.theta));
-            dg = math.sqrt(dx * dx + dy * dy);
-            if(abs(diff) > 0.02):
-                self.velocity.angular.z = kw * diff;
-                self.velocity.linear.x = 0.0;
+            angleToGoal = np.arctan2(dy, dx);
+            angleToTurn = np.arctan2(math.sin(angleToGoal - self.robotHeading), math.cos(angleToGoal - self.robotHeading));
+            distanceToGoal = math.sqrt(dx * dx + dy * dy);
+            print('pose: [x:{:0.3f}, y:{:0.3f}, th:{:0.3f}]  goal: [x:{:0.3f}, y:{:0.3f}, th:{:0.3f}] a2g: {:0.5f}'.format(
+                self.pose.position.x, self.pose.position.y, self.robotHeading, self.goal.position.x,
+                self.goal.position.y, self.goal.orientation.z, angleToTurn))
+            if(distanceToGoal < GOAL_REACHED_TOLERANCE):
+                break
+            if(abs(angleToTurn) >= ANGLE_REACHED_TOLERANCE):
+                self.velocity.angular.z = ANGUALR_VELOCITY_MULTIPLIER * angleToTurn;
+                self.velocity.linear.x = 0
             else:
-                self.velocity.linear.x = kv * math.sqrt(dx * dx + dy * dy);
-                self.velocity.angular.z = 0.0;
-            self.publisher.publish(self.velocity);
+                self.velocity.linear.x = min(LINEAR_VELOCITY_MULTIPLIER * math.sqrt(dx * dx + dy * dy), MAX_LINEAR_VELOCITY);
+                self.velocity.angular.z = 0
+            self.velocityPublisher.publish(self.velocity);
+
+        # align the robot w.r.t. the orientation of the current goal
         while(not rospy.is_shutdown()):
-            diff = self.angle_difference(self.goal.orientation.z, self.theta);
-            if(abs(diff) <= 0.1):
+            angleToRotate = self.angle_difference(self.goal.orientation.z, self.robotHeading);
+            print('pose: [x:{:0.3f}, y:{:0.3f}, th:{:0.3f}]  goal: [x:{:0.3f}, y:{:0.3f}, th:{:0.3f}] a2r: {:0.5f}'.format(
+                self.pose.position.x, self.pose.position.y, self.robotHeading, self.goal.position.x,
+                self.goal.position.y, self.goal.orientation.z, angleToRotate))
+            if(abs(angleToRotate) < ANGLE_REACHED_TOLERANCE):
                 break;
-            self.velocity.angular.z = kw * diff;
+            self.velocity.angular.z = ANGUALR_VELOCITY_MULTIPLIER * angleToRotate;
             self.velocity.linear.x = 0.0;
-            self.publisher.publish(self.velocity);
-        self.rate.sleep();
+            self.velocityPublisher.publish(self.velocity);
+
+        # why is the sleep only used here?
+        self.velocityPublishRate.sleep();
         self.velocity.linear.x = 0
         self.velocity.angular.z = 0
-        self.publisher.publish(self.velocity);
+        self.velocityPublisher.publish(self.velocity);
         return;
 
     def run(self):
@@ -120,7 +126,7 @@ class Controller:
             if(self.state == "idle" or self.state == "reached"):
                 continue;
             elif(self.state == "moving"):
-                self.move();
+                self.moveToGoal();
                 self.reached_count += 1;
                 self.state = "reached";
                 self.reached_service(self.reached_count);

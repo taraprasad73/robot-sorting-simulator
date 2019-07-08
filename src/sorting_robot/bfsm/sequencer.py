@@ -122,30 +122,14 @@ class Sequencer:
         processed_path = [];
         traffic_stops = [];
         prev = path[0];
-        count = 0;
         for i in range(1, len(path)):
-            if(self.isIntersection(path[i].row, path[i].col)):
-                if(self.isSameCell(prev, path[i]) is True):
-                    processed_path.append(path[i]);
-                    traffic_stops.append(None);
-                    count = 0;
-                elif(self.isIntersection(prev.row, prev.col) is False):
-                    processed_path.append(prev);
-                    traffic_stops.append(path[i]);
-                    count = 0;
-                else:
-                    count += 1;
-            elif(count == k):
+            if(self.isSameCell(prev, path[i])):
                 processed_path.append(path[i]);
                 traffic_stops.append(None);
-                count = 0;
-            elif(i == len(path) - 1):
-                processed_path.append(path[i]);
-                traffic_stops.append(None);
-            else:
-                count += 1;
+            # if(self.isIntersection(path[i].row, path[i].col) is True and self.isIntersection(prev.row, prev.col) is False):
+                # processed_path.append(prev);
+                # traffic_stops.append(path[i]);
             prev = path[i];
-
         return processed_path, traffic_stops;
 
     def follow_path(self, path):
