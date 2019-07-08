@@ -179,6 +179,8 @@ install(PROGRAMS
   scripts/generate_binary_map
   scripts/generate_spawn_locations
   scripts/generate_networkx_graph
+  scripts/spawn_robots_from_script
+  scripts/generate_launch_files
   nodes/heatmap
   nodes/visualize_heatmap
   nodes/path_planner

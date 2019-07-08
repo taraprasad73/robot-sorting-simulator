@@ -15,6 +15,7 @@ CONFIG_FILE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/{}_configurat
 GENERATED_SCRIPT_FILE = CATKIN_WORKSPACE + '/src/sorting_robot/data/spawn_robots_on_{}.sh'
 
 ADD_ROBOT_TEMPLATE = 'rosrun stdr_robot robot_handler add $HOME/catkin_ws/src/sorting_robot/stdr_data/robots/pandora_robot.yaml {} {} {}\n'
+WAIT_TIME_BETWEEN_CALLS = 3
 
 
 def getRandomFreePoints(count, cells, grid):
@@ -47,18 +48,38 @@ def generateSpawnLocations(mapName, numberOfLocations):
         for cell in freeCells:
             points.append(csm.getWorldCoordinateWithDirection(cell))
 
+        commandsList = []
         with open(GENERATED_SCRIPT_FILE, "w") as f:
             for point in points:
                 bashCommand = ADD_ROBOT_TEMPLATE.format(*point)
                 f.write(bashCommand)
-                process = subprocess.Popen(bashCommand, stdout=subprocess.PIPE, shell=True)
-                output, error = process.communicate()
-                print("Shell Output: " + output)
-                if error is not None:
-                    print("Shell Error: " + error)
+                commandsList.append(bashCommand)
 
-                # wait for some time, so that the stdr simulator is not overloaded with requests
-                time.sleep(3)
+
+def executeOneByOne(mapName):
+    global GENERATED_SCRIPT_FILE
+    GENERATED_SCRIPT_FILE = GENERATED_SCRIPT_FILE.format(mapName)
+    with open(GENERATED_SCRIPT_FILE, "r") as f:
+        commandsList = f.read().splitlines()
+        for bashCommand in commandsList:
+            process = subprocess.Popen(bashCommand, stdout=subprocess.PIPE, shell=True)
+            output, error = process.communicate()
+            print("Shell Output: " + output)
+            if error is not None:
+                print("Shell Error: " + error)
+            print('waiting {} seconds for simulator to process the current request...'.format(WAIT_TIME_BETWEEN_CALLS))
+            time.sleep(WAIT_TIME_BETWEEN_CALLS)
+
+
+def executeAllAtOnce(mapName):
+    global GENERATED_SCRIPT_FILE
+    GENERATED_SCRIPT_FILE = GENERATED_SCRIPT_FILE.format(mapName)
+    launchScriptCommand = 'bash {}'.format(GENERATED_SCRIPT_FILE)
+    process = subprocess.Popen(launchScriptCommand, stdout=subprocess.PIPE, shell=True)
+    output, error = process.communicate()
+    print("Shell Output:\n" + output)
+    if error is not None:
+        print("Shell Error: " + error)
 
 
 if __name__ == "__main__":

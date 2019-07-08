@@ -37,12 +37,13 @@ GOAL_REACHED_TOLERANCE = 0.001  # in m
 ANGLE_REACHED_TOLERANCE = 0.001  # in radians
 LINEAR_VELOCITY_MULTIPLIER = 0.5
 ANGUALR_VELOCITY_MULTIPLIER = 0.5
-VELOCITY_PUBLISH_RATE = 1
+VELOCITY_PUBLISH_FREQUENCY = 1000
 
 
 class Controller:
     def __init__(self, name):
-        rospy.init_node(name + '_controller', anonymous=False);
+        self.node_name = name + '_controller'
+        rospy.init_node(self.node_name, anonymous=False);
         self.pose = Pose();
         self.goal = Pose();
         self.velocity = Twist();
@@ -55,7 +56,7 @@ class Controller:
         self.goal_service = rospy.Service('/' + name + '/subgoal', GoalService, self.receive_goal);
         self.reached_service = rospy.ServiceProxy('/' + name + '/reached_subgoal', ReachedService);
         self.velocityPublisher = rospy.Publisher('/' + name + '/cmd_vel', Twist, queue_size=10);
-        self.velocityPublishRate = rospy.Rate(VELOCITY_PUBLISH_RATE);
+        self.velocityPublishRate = rospy.Rate(VELOCITY_PUBLISH_FREQUENCY)
 
     def odom_callback(self, data):
         self.pose = data.pose.pose;
@@ -88,6 +89,7 @@ class Controller:
             angleToGoal = np.arctan2(dy, dx);
             angleToTurn = np.arctan2(math.sin(angleToGoal - self.robotHeading), math.cos(angleToGoal - self.robotHeading));
             distanceToGoal = math.sqrt(dx * dx + dy * dy);
+            # use logdebug here, otherwise disk space will run out
             print('pose: [x:{:0.3f}, y:{:0.3f}, th:{:0.3f}]  goal: [x:{:0.3f}, y:{:0.3f}, th:{:0.3f}] a2g: {:0.5f}'.format(
                 self.pose.position.x, self.pose.position.y, self.robotHeading, self.goal.position.x,
                 self.goal.position.y, self.goal.orientation.z, angleToTurn))
@@ -100,6 +102,7 @@ class Controller:
                 self.velocity.linear.x = min(LINEAR_VELOCITY_MULTIPLIER * math.sqrt(dx * dx + dy * dy), MAX_LINEAR_VELOCITY);
                 self.velocity.angular.z = 0
             self.velocityPublisher.publish(self.velocity);
+            self.velocityPublishRate.sleep();
 
         # align the robot w.r.t. the orientation of the current goal
         while(not rospy.is_shutdown()):
@@ -112,16 +115,15 @@ class Controller:
             self.velocity.angular.z = ANGUALR_VELOCITY_MULTIPLIER * angleToRotate;
             self.velocity.linear.x = 0.0;
             self.velocityPublisher.publish(self.velocity);
+            self.velocityPublishRate.sleep();
 
-        # why is the sleep only used here?
-        self.velocityPublishRate.sleep();
         self.velocity.linear.x = 0
         self.velocity.angular.z = 0
         self.velocityPublisher.publish(self.velocity);
         return;
 
     def run(self):
-        print('Controller ready');
+        print('{} is ready'.format(self.node_name));
         while not rospy.is_shutdown():
             if(self.state == "idle" or self.state == "reached"):
                 continue;

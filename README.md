@@ -135,11 +135,14 @@ Any launch file can be executed as rosrun sorting_robot name_of_launch_file [com
 -----
  - The following commands are run one after another
    ~~~~
+   Terminal 0: roscore
    Terminal 1: roslaunch sorting_robot stdr_server_with_map_and_gui.launch
    Terminal 2: rosrun sorting_robot generate_spawn_locations [num_of_robots_to_spawn]
+   Terminal 2: rosrun sorting_robot spawn_robots_from_script
    Terminal 3: roslaunch sorting_robot modules.launch
-   Terminal 4: rosrun sorting_robot controller [robot_name]
-   Terminal 5: rosrun sorting_robot bfsm [robot_name]
+   Terminal 4: rosrun sorting_robot generate_launch_files
+   Terminal 4: roslaunch sorting_robot controllers.launch
+   Terminal 5: roslaunch sorting_robot bfsms.launch
    ~~~~
    
 ## Code Formatter Settings for Visual Studio Code

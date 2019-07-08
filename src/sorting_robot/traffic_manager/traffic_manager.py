@@ -74,7 +74,7 @@ class StreetSignal:
         else:
             return True;
 
-    def vertical_waiting(self):
+    def vertical_waiting_count(self):
         if(self.vertical == Direction.UP):
             count = 0;
             for i in range(self.row + 1, min(self.row + self.k + 1, self.rows)):
@@ -88,7 +88,7 @@ class StreetSignal:
                     count += 1;
             return count;
 
-    def horizontal_waiting(self):
+    def horizontal_waiting_count(self):
         if(self.horizontal == Direction.LEFT):
             count = 0;
             for i in range(self.col + 1, min(self.col + self.k + 1, self.cols)):
@@ -105,7 +105,7 @@ class StreetSignal:
     def run(self):
         while not rospy.is_shutdown():
             if(self.curr_state == 'GR'):
-                if(self.horizontal_waiting() == 0 and self.vertical_waiting() == self.k):
+                if(self.horizontal_waiting_count() == 0 and self.vertical_waiting_count() > 0):
                     self.curr_state = 'YR';
                 else:
                     time.sleep(self.wait_time);
@@ -115,7 +115,7 @@ class StreetSignal:
                     continue;
                 self.curr_state = 'RG';
             elif(self.curr_state == 'RG'):
-                if(self.vertical_waiting() == 0 and self.horizontal_waiting() == self.k):
+                if(self.vertical_waiting_count() == 0 and self.horizontal_waiting_count() > 0):
                     self.curr_state = 'RY';
                 else:
                     time.sleep(self.wait_time);
@@ -157,7 +157,7 @@ class HighwaySignal:
             return False;
         return True;
 
-    def vertical_waiting(self):
+    def vertical_waiting_count(self):
         count = 0;
         for i in range(self.row + 1, min(self.row + self.k + 1, self.rows)):
             if(occupancy_map[i][self.col] is True):
@@ -167,7 +167,7 @@ class HighwaySignal:
                 count += 1;
         return count;
 
-    def horizontal_waiting(self):
+    def horizontal_waiting_count(self):
         count = 0;
         for i in range(self.col + 1, min(self.col + self.k + 1, self.cols)):
             if(occupancy_map[self.row + 1][i] is True):
@@ -180,7 +180,7 @@ class HighwaySignal:
     def run(self):
         while not rospy.is_shutdown():
             if(self.curr_state == 'GR'):
-                if(self.horizontal_waiting() == 0 and self.vertical_waiting() == self.k * 2):
+                if(self.horizontal_waiting_count() == 0 and self.vertical_waiting_count() > 0):
                     self.curr_state = 'YR';
                 else:
                     time.sleep(self.wait_time);
@@ -190,7 +190,7 @@ class HighwaySignal:
                     continue;
                 self.curr_state = 'RG';
             elif(self.curr_state == 'RG'):
-                if(self.vertical_waiting() == 0 and self.horizontal_waiting() == self.k * 2):
+                if(self.vertical_waiting_count() == 0 and self.horizontal_waiting_count() > 0):
                     self.curr_state = 'RY';
                 else:
                     time.sleep(self.wait_time);

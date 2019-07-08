@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<launch>
+	<node name="robot2_bfsm" args="robot2" pkg="sorting_robot" output="log" cwd="node" type="bfsm"></node>
+	<node name="robot3_bfsm" args="robot3" pkg="sorting_robot" output="log" cwd="node" type="bfsm"></node>
+	<node name="robot0_bfsm" args="robot0" pkg="sorting_robot" output="log" cwd="node" type="bfsm"></node>
+	<node name="robot1_bfsm" args="robot1" pkg="sorting_robot" output="log" cwd="node" type="bfsm"></node>
+</launch>

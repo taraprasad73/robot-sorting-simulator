@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from sorting_robot.stdr_initializer import generateSpawnLocations
+from sorting_robot.system_initialization import generateSpawnLocations
 import argparse
 
 

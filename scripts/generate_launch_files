@@ -1,0 +1,8 @@
+#!/usr/bin/env python
+
+from sorting_robot.system_initialization import generate_launch_files
+import argparse
+
+
+if __name__ == '__main__':
+    generate_launch_files()

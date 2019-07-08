@@ -136,9 +136,9 @@ class Sequencer:
         path, stops = self.process_path(path, 5);
         prev = self.pose;
         for i in range(0, len(path)):
-            pose = Pose();
-            print(path[i]);
+            print('current subgoal: {} {} {}'.format(path[i].row, path[i].col, path[i].direction))
             world = self.csm.getWorldCoordinateWithDirection((path[i].row, path[i].col, path[i].direction));
+            pose = Pose();
             pose.position.x = world[0];
             pose.position.y = world[1];
             pose.orientation.z = world[2];

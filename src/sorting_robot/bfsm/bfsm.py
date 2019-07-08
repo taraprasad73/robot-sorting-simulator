@@ -31,7 +31,8 @@ The charging parts can be added here eventually
 
 class BFSM:
     def __init__(self, name):
-        rospy.init_node(name + '_bfsm', anonymous=False);
+        self.node_name = name + '_bfsm'
+        rospy.init_node(self.node_name, anonymous=False);
         self.state = "select_pickup";
         self.possible_states = ["go_to_pickup", "select_pickup", "making_pickup", "go_to_bin", "make_the_drop", "go_to_charge", "select_charge", "charging"];
         self.name = name;
@@ -58,22 +59,12 @@ class BFSM:
         self.ready = True;
 
     def run(self):
-        '''
-        path = [];
-        self.state = "go_to_pickup";
-        self.pose = State(46,18,90);
-        self.goal = State(19,7,90);
-        path = self.path_service(self.pose,self.goal);
-        self.sequencer.follow_path(path.path);
-        print('Completed BFSM..');
-        '''
         while(self.ready is False):
             continue;
         while not rospy.is_shutdown():
             if(self.state == "go_to_pickup"):
                 path = self.path_service(self.pose, self.pickup_location);
                 print("Received path from the planner to pickup");
-                print(path.path)
                 self.sequencer.follow_path(path.path);
                 self.state = "make_the_pickup";
             elif(self.state == "select_pickup"):
@@ -97,9 +88,3 @@ class BFSM:
                 print("Making the drop");
                 time.sleep(1);
                 self.state = "select_pickup";
-
-
-if __name__ == "__main__":
-    name = sys.argv[1];
-    bfsm = BFSM(name);
-    bfsm.run();
