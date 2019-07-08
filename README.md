@@ -93,57 +93,29 @@ Any launch file can be executed as rosrun sorting_robot name_of_launch_file [com
 
 ## Running the Sorting Robot Program
 
-### Spawn Robots on the STDR simulator
+### Generate the maps
 -----
- - Generate the map configuration file
-    ~~~~
-    rosrun sorting_robot generate_map_config
-    ~~~~
-    The output file will be generated in $HOME/catkin_ws/src/sorting_robot/data/ folder.
+~~~~
+rosrun sorting_robot generate_map_config (execute this first)
+rosrun sorting_robot generate_binary_map
+rosrun sorting_robot generate_networkx_graph
+rosrun sorting_robot generate_grid_image (optional)
+~~~~
+The output files will be generated in $HOME/catkin_ws/src/sorting_robot/data/ folder.
 
- - Launch the STDR simulator
-    ~~~~
-    Terminal 1: roscore
-    Terminal 2: roslaunch sorting_robot stdr_server_with_map_and_gui.launch
-    Terminal 3: rosrun sorting_robot generate_spawn_locations [num_of_robots_to_spawn]
-    ~~~~
-
-### Run Heatmap and Path Planner nodes
+### Launch the entire sorting_robot system
 -----
- - Launch the heatmap service and the path planner service
-    ~~~~
-    Terminal 1: rosrun sorting_robot heatmap
-    Terminal 2: rosrun sorting_robot path_planner
-    ~~~~
-
-### Launch BFSM and Controller
------
- - Launch the low-level controller and the Behavioral Finite State Machine
-    ~~~~
-    Terminal 1: rosrun sorting_robot controller [robot_name]
-    Terminal 2: rosrun sorting_robot bfsm [robot_name]
-    ~~~~
-    The commands will be extended to use roslaunch for multiple robots. 
-## Launch Heatmap, Path Planner, Pickup Manager and Traffic Manager
------
- - Launch all the above using one command
-    ~~~~
-    Terminal 1: roslaunch sorting_robot modules.launch
-    ~~~~
-
-## Launch the entire sorting_robot system
------
- - The following commands are run one after another
-   ~~~~
-   Terminal 0: roscore
-   Terminal 1: roslaunch sorting_robot stdr_server_with_map_and_gui.launch
-   Terminal 2: rosrun sorting_robot generate_spawn_locations [num_of_robots_to_spawn]
-   Terminal 2: rosrun sorting_robot spawn_robots_from_script
-   Terminal 3: roslaunch sorting_robot modules.launch
-   Terminal 4: rosrun sorting_robot generate_launch_files
-   Terminal 4: roslaunch sorting_robot controllers.launch
-   Terminal 5: roslaunch sorting_robot bfsms.launch
-   ~~~~
+Execute these commands in sequence.
+~~~~
+Terminal 0: roscore
+Terminal 1: roslaunch sorting_robot stdr_server_with_map_and_gui.launch
+Terminal 2: rosrun sorting_robot generate_spawn_locations [num_of_robots_to_spawn]
+Terminal 2: rosrun sorting_robot spawn_robots_from_script
+Terminal 3: roslaunch sorting_robot modules.launch
+Terminal 4: rosrun sorting_robot generate_launch_files
+Terminal 4: roslaunch sorting_robot controllers.launch
+Terminal 5: roslaunch sorting_robot bfsms.launch
+~~~~
    
 ## Coding Standards
 -----
