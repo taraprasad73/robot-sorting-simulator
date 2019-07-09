@@ -1,13 +1,13 @@
-import rospy;
-import time;
-import numpy as np;
+import rospy
+import time
+import numpy as np
 from enum import Enum
-from sorting_robot.msg import State, Pickup;
-from sorting_robot.srv import Path, PathInPickup, PathToBin, GetPickup, MakePickup;
-from nav_msgs.msg import Odometry;
-from geometry_msgs.msg import Pose;
-from std_msgs.msg import String;
-from sequencer import *;
+from nav_msgs.msg import Odometry
+from std_msgs.msg import String
+from sorting_robot.msg import State, Pickup
+from sorting_robot.srv import Path, PathInPickup, PathToBin, GetPickup, MakePickup
+from sequencer import Sequencer
+from ..utils import CoordinateSpaceManager
 
 '''
 The BFSM acts as the overall highest level of control of the program. It purely deals with the different
@@ -44,58 +44,56 @@ class RobotState(Enum):
 class BFSM:
     def __init__(self, name):
         self.node_name = name + '_bfsm'
-        rospy.init_node(self.node_name, anonymous=False, log_level=rospy.INFO);
-        self.state = RobotState.SELECT_PICKUP;
-        self.name = name;
-        self.pose = State();
-        self.pickup_location = State();
-        self.bin_location = State();
-        self.pickup_id = None;
-        self.ready = False;
-        self.csm = CoordinateSpaceManager();
-        self.sequencer = Sequencer(name);
-        self.pose_subscriber = rospy.Subscriber('/' + name + '/odom', Odometry, self.odom_callback);
-        self.path_service = rospy.ServiceProxy('/path', Path);
-        self.bin_service = rospy.ServiceProxy('/path_to_bin', PathToBin);
-        self.pickup_service = rospy.ServiceProxy('/pickup_location', GetPickup);
-        self.make_pickup_service = rospy.ServiceProxy('/make_pickup', MakePickup);
+        rospy.init_node(self.node_name, anonymous=False, log_level=rospy.INFO)
+        self.state = RobotState.SELECT_PICKUP
+        self.name = name
+        self.pose = State()
+        self.pickup_location = State()
+        self.bin_location = State()
+        self.pickup_id = None
+        self.ready = False
+        self.csm = CoordinateSpaceManager()
+        self.sequencer = Sequencer(name)
+        self.pose_subscriber = rospy.Subscriber('/' + name + '/odom', Odometry, self.odom_callback)
+        self.path_service = rospy.ServiceProxy('/path', Path)
+        self.bin_service = rospy.ServiceProxy('/path_to_bin', PathToBin)
+        self.pickup_service = rospy.ServiceProxy('/pickup_location', GetPickup)
+        self.make_pickup_service = rospy.ServiceProxy('/make_pickup', MakePickup)
 
     def odom_callback(self, data):
-        pose = data.pose.pose;
-        theta = euler_from_quaternion([pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w])[2];
-        x, y, theta = self.csm.convertPointToState((pose.position.x, pose.position.y, theta));
-        self.pose.row = x;
-        self.pose.col = y;
-        self.pose.direction = theta;
-        self.ready = True;
+        row, col, directionInDegrees = self.csm.convertPoseToState(data.pose.pose)
+        self.pose.row = row
+        self.pose.col = col
+        self.pose.direction = directionInDegrees
+        self.ready = True
 
     def run(self):
         while(self.ready is False):
-            continue;
+            continue
         while not rospy.is_shutdown():
             if(self.state == RobotState.GO_TO_PICKUP):
-                path = self.path_service(self.pose, self.pickup_location);
-                rospy.loginfo("Received path from the planner to pickup");
-                self.sequencer.follow_path(path.path);
-                self.state = RobotState.MAKE_THE_PICKUP;
+                path = self.path_service(self.pose, self.pickup_location)
+                rospy.loginfo("Received path from the planner to pickup")
+                self.sequencer.follow_path(path.path)
+                self.state = RobotState.MAKE_THE_PICKUP
             elif(self.state == RobotState.SELECT_PICKUP):
-                pickup_message = self.pickup_service(String(self.name)).pickup;
-                rospy.loginfo("Received the address of the pickup");
-                self.pickup_location = pickup_message.location;
-                self.pickup_id = pickup_message.pickup_id;
-                self.state = RobotState.GO_TO_PICKUP;
+                pickup_message = self.pickup_service(String(self.name)).pickup
+                rospy.loginfo("Received the address of the pickup")
+                self.pickup_location = pickup_message.location
+                self.pickup_id = pickup_message.pickup_id
+                self.state = RobotState.GO_TO_PICKUP
             elif(self.state == RobotState.MAKE_THE_PICKUP):
-                rospy.loginfo("Making the Pickup");
-                self.bin_location = self.make_pickup_service(self.pickup_id, String(self.name)).location;
-                time.sleep(2);
-                rospy.loginfo("Received the address of the bin");
-                self.state = RobotState.GO_TO_BIN;
+                rospy.loginfo("Making the Pickup")
+                self.bin_location = self.make_pickup_service(self.pickup_id, String(self.name)).location
+                time.sleep(2)
+                rospy.loginfo("Received the address of the bin")
+                self.state = RobotState.GO_TO_BIN
             elif(self.state == RobotState.GO_TO_BIN):
-                path = self.bin_service(self.pose, self.bin_location);
-                rospy.loginfo("Received path to the bin");
-                self.sequencer.follow_path(path.path);
-                self.state = RobotState.MAKE_THE_DROP;
+                path = self.bin_service(self.pose, self.bin_location)
+                rospy.loginfo("Received path to the bin")
+                self.sequencer.follow_path(path.path)
+                self.state = RobotState.MAKE_THE_DROP
             elif(self.state == RobotState.MAKE_THE_DROP):
-                rospy.loginfo("Making the drop");
-                time.sleep(1);
-                self.state = RobotState.SELECT_PICKUP;
+                rospy.loginfo("Making the drop")
+                time.sleep(1)
+                self.state = RobotState.SELECT_PICKUP

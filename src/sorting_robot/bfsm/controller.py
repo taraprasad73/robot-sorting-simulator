@@ -1,136 +1,291 @@
-import math;
-import rospy;
-import numpy as np;
+import math
+import threading
+import numpy as np
 from enum import Enum
-from nav_msgs.msg import Odometry;
-from geometry_msgs.msg import Pose, Twist;
-from tf.transformations import euler_from_quaternion;
-from sorting_robot.msg import *;
-from sorting_robot.srv import GoalService, ReachedService;
+import rospy
+from nav_msgs.msg import Odometry
+from geometry_msgs.msg import Pose, Twist
+from tf.transformations import euler_from_quaternion
+from sorting_robot.msg import OccupancyMap
+from sorting_robot.srv import GoalService, ReachedService
+from ..utils import CoordinateSpaceManager, MapInformationProvider
+# TODO from rospy.numpy_msg import numpy_msg http://wiki.ros.org/rospy_tutorials/Tutorials/numpy
+
 
 '''
 The controller has three states
 idle - doing nothing
 moving - is moving towards the current subgoal
 reached - has reached the subgoal
+waiting - waiting for the path in front of it to clear
 
 The contolller communicates with the sequencer using two services.
 /subgoal service is called by the sequencer to provide the next subgoal to the controller
 /reached_subgoal is called by the controller to give an acknowledgement to the sequencer
 
-The moveToGoal() function which actually moves the robot to its goal is described below
-LINEAR_VELOCITY_MULTIPLIER - Constant for linear velocity of the robot
-ANGUALR_VELOCITY_MULTIPLIER - Constant for angular velocity of the robot
-dg - Distance of the robot from the goal
-dx - Distance of the robot from the goal along x-axis
-dy - Distance of the robot from the goal along y-axis
-angleToGoal - Angle to goal
-angleToTurn - Difference between the robot orientation and the angleToGoal.
-angleToRotate - Angle to rotate so as to aling the robot with the goal's orientation
-The first while loop is for linear movement while the next is for pure angular motion.
+Some of the terms used are explained below:
+ - LINEAR_VELOCITY_MULTIPLIER - Constant for linear velocity of the robot
+ - ANGUALR_VELOCITY_MULTIPLIER - Constant for angular velocity of the robot
+ - dg - Distance of the robot from the goal
+ - dx - Distance of the robot from the goal along x-axis
+ - dy - Distance of the robot from the goal along y-axis
+ - angleToGoal - Angle to goal
+ - angleToTurn - Difference between the robot orientation and the angleToGoal.
+ - angleToRotate - Angle to rotate so as to aling the robot with the goal's orientation
+
+WARNING: Using debug mode for log level will consume large amount of disk space.
 '''
 
 MAX_LINEAR_VELOCITY = 1  # in m/s
 GOAL_REACHED_TOLERANCE = 0.001  # in m
 ANGLE_REACHED_TOLERANCE = 0.001  # in radians
 LINEAR_VELOCITY_MULTIPLIER = 0.5
-ANGUALR_VELOCITY_MULTIPLIER = 0.5
+ANGULAR_VELOCITY_MULTIPLIER = 0.5
 VELOCITY_PUBLISH_FREQUENCY = 1000
+NUMBER_OF_CELLS_TO_SCAN = 10
 
 
 class RobotState(Enum):
     IDLE = 0
-    MOVING = 1
-    REACHED = 2
+    MOVING_TO_MAIN_GOAL = 1
+    REACHED_MAIN_GOAL = 2
+    WAITING_FOR_CLEARANCE = 3
+    MOVING_TO_TEMPORARY_GOAL = 4
 
 
 class Controller:
-    def __init__(self, name):
-        self.node_name = name + '_controller'
-        rospy.init_node(self.node_name, anonymous=False, log_level=rospy.INFO);
-        self.pose = Pose();
-        self.goal = Pose();
-        self.velocity = Twist();
-        self.robotHeading = 0;
-        self.reached_count = 0;
-        self.name = name;
-        self.state = RobotState.IDLE;
-        self.pose_subscriber = rospy.Subscriber('/' + name + '/odom', Odometry, self.odom_callback);
-        self.goal_service = rospy.Service('/' + name + '/subgoal', GoalService, self.receive_goal);
-        self.reached_service = rospy.ServiceProxy('/' + name + '/reached_subgoal', ReachedService);
-        self.velocityPublisher = rospy.Publisher('/' + name + '/cmd_vel', Twist, queue_size=10);
+    def __init__(self, robotName):
+        # create node
+        self.node_name = robotName + '_controller'
+        rospy.init_node(self.node_name, anonymous=False, log_level=rospy.INFO)
+
+        # robot's info
+        self.currentPosition = Pose()
+        self.currentGoal = None
+        self.currentRow = None
+        self.currentCol = None
+        self.directionInDegrees = None
+        self.deltaRow = None
+        self.deltaCol = None
+        self.mainGoal = None
+        self.velocity = Twist()
+        self.robotHeading = 0
+        self.reached_count = 0
+        self.robotName = robotName
+        self.robotState = RobotState.IDLE
+
+        # utilities classes
+        self.mip = MapInformationProvider()
+        self.csm = CoordinateSpaceManager()
+
+        # subscribe to the occupancy_map for collision prevention
+        self.occupancy_subscriber = rospy.Subscriber('/occupancy_map', OccupancyMap, self.occupancy_callback)
+        self.occupancyMap = None
+        self.occupancyMapLock = threading.Lock()
+
+        # subscribe to the odom to get the position of the robot
+        # TODO add lock variables needed
+        self.pose_subscriber = rospy.Subscriber('/' + robotName + '/odom', Odometry, self.odom_callback)
+
+        # provide a service to receive goal from controller
+        # TODO add lock variables if needed
+        self.goal_service = rospy.Service('/' + robotName + '/subgoal', GoalService, self.receive_goal)
+
+        # consume reached_subgoal service to provide acknowledgement
+        self.reached_service = rospy.ServiceProxy('/' + robotName + '/reached_subgoal', ReachedService)
+
+        # publish the velocity of the robot to cmd_vel topic
+        self.velocityPublisher = rospy.Publisher('/' + robotName + '/cmd_vel', Twist, queue_size=10)
         self.velocityPublishRate = rospy.Rate(VELOCITY_PUBLISH_FREQUENCY)
 
+    def occupancy_callback(self, data):
+        rows = data.rows
+        cols = data.columns
+        self.occupancyMapLock.acquire()
+        # TODO use rospy.numpy_msg instead of converting list to a numpy array
+        self.occupancyMap = np.array(data.occupancy_values).reshape((rows, cols))
+        self.occupancyMapLock.release()
+
     def odom_callback(self, data):
-        self.pose = data.pose.pose;
-        self.robotHeading = euler_from_quaternion([self.pose.orientation.x, self.pose.orientation.y,
-                                                   self.pose.orientation.z, self.pose.orientation.w])[2];
+        self.currentPosition = data.pose.pose
+        self.robotHeading = euler_from_quaternion([self.currentPosition.orientation.x, self.currentPosition.orientation.y,
+                                                   self.currentPosition.orientation.z, self.currentPosition.orientation.w])[2]
+        self.currentRow, self.currentCol, self.directionInDegrees = self.csm.convertPoseToState(self.currentPosition)
 
-    def laser_callback(self, data):
-        self.laser_scan = list(data.ranges);
+    def set_current_goal(self, row, col, goal):
+        self.currentGoalRow = row
+        self.currentGoalCol = col
+        self.currentGoal = goal
 
+    # This function should be invoked by the sequencer only when the robot is in the idle state.
     def receive_goal(self, data):
-        self.goal = data.goal
-        rospy.loginfo("Received goal from sequencer: ({:0.3f} {:0.3f} {})".format(self.goal.position.x, self.goal.position.y, self.goal.orientation.z));
-        self.state = RobotState.MOVING;
-        return 1;
+        if self.robotState != RobotState.IDLE:
+            rospy.logwarn('The robot is not in idle state. Rejecting the request to go to ({}, {}, {})'.format(
+                data.goal.row, data.goal.col, data.goal.direction))
+            return False
+        self.mainGoalRow = data.goal.row
+        self.mainGoalCol = data.goal.col
+        self.mainGoal = self.csm.getPoseFromGridCoordinates(data.goal.row, data.goal.col, data.goal.direction)
+        rospy.loginfo("Received goal from sequencer: ({:0.3f} {:0.3f} {})".format(self.mainGoal.position.x,
+                                                                                  self.mainGoal.position.y,
+                                                                                  self.mainGoal.orientation.z))
+        self.set_current_goal(self.mainGoalRow, self.mainGoalCol, self.mainGoal)
 
-    def angle_difference(self, angle1, angle2):
-        if(abs(angle1 - angle2) <= math.pi):
-            return angle1 - angle2;
-        elif((angle1 - angle2) > math.pi):
-            return -(2 * math.pi - (angle1 - angle2));
-        else:
-            return 2 * math.pi + (angle1 - angle2);
+        # wait for the odom_callback to set this variable
+        while(self.directionInDegrees is None):
+            continue
 
-    def moveToGoal(self):
-        # make the robot reach the position of the current goal
-        while(not rospy.is_shutdown()):
-            dx = self.goal.position.x - self.pose.position.x;
-            dy = self.goal.position.y - self.pose.position.y;
-            angleToGoal = np.arctan2(dy, dx);
-            angleToTurn = np.arctan2(math.sin(angleToGoal - self.robotHeading), math.cos(angleToGoal - self.robotHeading));
-            distanceToGoal = math.sqrt(dx * dx + dy * dy);
-            # use logdebug here, otherwise disk space will run out
-            rospy.logdebug('pose: [x:{:0.3f}, y:{:0.3f}, th:{:0.3f}]  goal: [x:{:0.3f}, y:{:0.3f}, th:{:0.3f}] a2g: {:0.5f}'.format(
-                self.pose.position.x, self.pose.position.y, self.robotHeading, self.goal.position.x,
-                self.goal.position.y, self.goal.orientation.z, angleToTurn))
-            if(distanceToGoal < GOAL_REACHED_TOLERANCE):
+        # deltaRow, deltaCol when added to current position progresses forward in the direction
+        # from current position to goal
+        self.deltaRow, self.deltaCol = 0, 0
+        if self.directionInDegrees == 0:
+            self.deltaCol = 1
+        elif self.directionInDegrees == 90:
+            self.deltaRow = -1
+        elif self.directionInDegrees == 180:
+            self.deltaCol = -1
+        elif self.directionInDegrees == 270:
+            self.deltaRow = 1
+
+        self.robotState = RobotState.MOVING_TO_MAIN_GOAL
+        return True
+
+    # scan for obstacles till the current goal or NUMBER_OF_CELLS_TO_SCAN whichever is minimum
+    def get_first_occupied_cell(self):
+        occupiedCell = None
+        row = self.currentRow
+        col = self.currentCol
+        self.occupancyMapLock.acquire()
+        for cellsScanned in range(NUMBER_OF_CELLS_TO_SCAN):
+            row += self.deltaRow
+            col += self.deltaCol
+            if self.occupancyMap[row][col] is True:
+                occupiedCell = (row, col)
                 break
-            if(abs(angleToTurn) >= ANGLE_REACHED_TOLERANCE):
-                self.velocity.angular.z = ANGUALR_VELOCITY_MULTIPLIER * angleToTurn;
-                self.velocity.linear.x = 0
-            else:
-                self.velocity.linear.x = min(LINEAR_VELOCITY_MULTIPLIER * math.sqrt(dx * dx + dy * dy), MAX_LINEAR_VELOCITY);
-                self.velocity.angular.z = 0
-            self.velocityPublisher.publish(self.velocity);
-            self.velocityPublishRate.sleep();
+            if row == self.currentGoalRow and col == self.currentGoalCol:
+                break
+        self.occupancyMapLock.release()
+        return occupiedCell
 
-        # align the robot w.r.t. the orientation of the current goal
-        while(not rospy.is_shutdown()):
-            angleToRotate = self.angle_difference(self.goal.orientation.z, self.robotHeading);
-            rospy.logdebug('pose: [x:{:0.3f}, y:{:0.3f}, th:{:0.3f}]  goal: [x:{:0.3f}, y:{:0.3f}, th:{:0.3f}] a2r: {:0.5f}'.format(
-                self.pose.position.x, self.pose.position.y, self.robotHeading, self.goal.position.x,
-                self.goal.position.y, self.goal.orientation.z, angleToRotate))
-            if(abs(angleToRotate) < ANGLE_REACHED_TOLERANCE):
-                break;
-            self.velocity.angular.z = ANGUALR_VELOCITY_MULTIPLIER * angleToRotate;
-            self.velocity.linear.x = 0.0;
-            self.velocityPublisher.publish(self.velocity);
-            self.velocityPublishRate.sleep();
+    def get_nearest_non_intersection_cell(self, firstOccupiedCell):
+        row, col = firstOccupiedCell
+        while(self.mip.isIntersection(row, col)):
+            row += self.deltaRow
+            col += self.deltaCol
+            # if after going back the cell is the one with the robot in it, and is still an intersection
+            if row == self.currentRow and col == self.currentCol:
+                return None
+        return (row, col)
 
-        self.velocity.linear.x = 0
+    def stop_the_robot(self):
         self.velocity.angular.z = 0
-        self.velocityPublisher.publish(self.velocity);
-        return;
+        self.velocity.linear.x = 0
+        self.velocityPublisher.publish(self.velocity)
 
     def run(self):
-        rospy.loginfo('{} is ready'.format(self.node_name));
+        rospy.loginfo('{} is ready'.format(self.node_name))
         while not rospy.is_shutdown():
-            if(self.state == RobotState.IDLE or self.state == RobotState.REACHED):
-                continue;
-            elif(self.state == RobotState.MOVING):
-                self.moveToGoal();
-                self.reached_count += 1;
-                self.state = RobotState.REACHED;
-                self.reached_service(self.reached_count);
+            if self.robotState == RobotState.IDLE:
+                continue
+            elif self.robotState == RobotState.WAITING_FOR_CLEARANCE:
+                if self.get_first_occupied_cell() is None:
+                    self.currentGoal = self.mainGoal
+                    self.robotState = RobotState.MOVING_TO_MAIN_GOAL
+                    rospy.loginfo('Clearance received! Going to main goal...')
+            elif self.robotState == RobotState.MOVING_TO_MAIN_GOAL:
+                firstOccupiedCell = self.get_first_occupied_cell()
+                if firstOccupiedCell is not None:
+                    self.avoid_obstacle(firstOccupiedCell)
+                else:
+                    dx, dy, distanceToGoal = self.get_distances()
+                    if(distanceToGoal < GOAL_REACHED_TOLERANCE):
+                        self.robotState = RobotState.REACHED_MAIN_GOAL
+                    else:
+                        self.adjust_velocity(dx, dy)
+            elif self.robotState == RobotState.MOVING_TO_TEMPORARY_GOAL:
+                firstOccupiedCell = self.get_first_occupied_cell()
+                if firstOccupiedCell is not None:
+                    self.avoid_obstacle(firstOccupiedCell)
+                else:
+                    dx, dy, distanceToGoal = self.get_distances()
+                    if(distanceToGoal < GOAL_REACHED_TOLERANCE):
+                        self.stop_the_robot()
+                        self.robotState = RobotState.WAITING_FOR_CLEARANCE
+                        rospy.loginfo('Reached temporary goal. Waiting for clearance...')
+                    else:
+                        self.adjust_velocity(dx, dy)
+            elif self.robotState == RobotState.REACHED_MAIN_GOAL:
+                self.alignWithGoalOrientation()
+                self.stop_the_robot()
+                self.robotState = RobotState.IDLE
+                rospy.loginfo('Goal orientation reached. Job finished! Going to idle state.')
+                while(True):
+                    status = self.reached_service(True)
+                    if status is False:
+                        rospy.logwarn('Sub goal reached acknowledgement not received by sequencer. Retrying...')
+                    else:
+                        break
+
+    def avoid_obstacle(self, firstOccupiedCell):
+        rospy.loginfo('Obstacle encountered at {} while {}'.format(firstOccupiedCell, self.robotState.name))
+        nearestNonIntersectionCell = get_nearest_non_intersection_cell(self, firstOccupiedCell)
+        if nearestNonIntersectionCell is not None:
+            row, col = nearestNonIntersectionCell
+            # use the current direction of the robot for the temporary goal
+            goal = self.getPoseFromGridCoordinates(row, col, self.directionInDegrees)
+            self.set_current_goal(row, col, goal)
+            self.robotState = RobotState.MOVING_TO_TEMPORARY_GOAL
+            rospy.loginfo('Going to nearest non-intersection cell: {}.'.format(nearestNonIntersectionCell))
+        else:
+            self.stop_the_robot()
+            self.robotState = RobotState.WAITING_FOR_CLEARANCE
+            rospy.logwarn("Robot had to stop at an intersection cell."
+                          "This case should be prevented from happening.")
+
+    def get_distances(self):
+        dx = self.currentGoal.position.x - self.currentPosition.position.x
+        dy = self.currentGoal.position.y - self.currentPosition.position.y
+        distanceToGoal = math.sqrt(dx * dx + dy * dy)
+        return dx, dy, distanceToGoal
+
+    def adjust_velocity(self, dx, dy):
+        angleToGoal = np.arctan2(dy, dx)
+        angleToTurn = np.arctan2(math.sin(angleToGoal - self.robotHeading),
+                                 math.cos(angleToGoal - self.robotHeading))
+        rospy.logdebug('pose: [x:{:0.3f}, y:{:0.3f}, th:{:0.3f}]  goal: [x:{:0.3f}, y:{:0.3f},th:{:0.3f}]'
+                       ' a2g: {:0.5f}'.format(
+                           self.currentPosition.position.x, self.currentPosition.position.y,
+                           self.robotHeading, self.currentGoal.position.x, self.currentGoal.position.y,
+                           self.currentGoal.orientation.z, angleToTurn))
+        if(abs(angleToTurn) >= ANGLE_REACHED_TOLERANCE):
+            self.velocity.angular.z = ANGULAR_VELOCITY_MULTIPLIER * angleToTurn
+            self.velocity.linear.x = 0
+        else:
+            self.velocity.linear.x = min(LINEAR_VELOCITY_MULTIPLIER * math.sqrt(dx * dx + dy * dy),
+                                         MAX_LINEAR_VELOCITY)
+            self.velocity.angular.z = 0
+        self.velocityPublisher.publish(self.velocity)
+        self.velocityPublishRate.sleep()
+
+    def alignWithGoalOrientation(self):
+        # align the robot w.r.t. the orientation of the current goal
+        while(not rospy.is_shutdown()):
+            angleToRotate = angle_difference(self.currentGoal.orientation.z, self.robotHeading)
+            rospy.logdebug('pose: [x:{:0.3f}, y:{:0.3f}, th:{:0.3f}]  goal: [x:{:0.3f}, y:{:0.3f}, th:{:0.3f}] a2r: {:0.5f}'.format(
+                self.currentPosition.position.x, self.currentPosition.position.y, self.robotHeading, self.currentGoal.position.x,
+                self.currentGoal.position.y, self.currentGoal.orientation.z, angleToRotate))
+            if(abs(angleToRotate) < ANGLE_REACHED_TOLERANCE):
+                break
+            self.velocity.angular.z = ANGULAR_VELOCITY_MULTIPLIER * angleToRotate
+            self.velocity.linear.x = 0.0
+            self.velocityPublisher.publish(self.velocity)
+            self.velocityPublishRate.sleep()
+
+
+def angle_difference(angle1, angle2):
+    if(abs(angle1 - angle2) <= math.pi):
+        return angle1 - angle2
+    elif((angle1 - angle2) > math.pi):
+        return -(2 * math.pi - (angle1 - angle2))
+    else:
+        return 2 * math.pi + (angle1 - angle2)

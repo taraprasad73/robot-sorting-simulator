@@ -2,6 +2,8 @@ import os
 import math
 import rospy
 import numpy as np
+from tf.transformations import euler_from_quaternion
+from geometry_msgs.msg import Pose
 from ..map_generation.generate_map_config import Cell, Direction
 from robot_info import RobotInfo
 
@@ -43,14 +45,26 @@ class CoordinateSpaceManager:
         try:
             mapConfiguration = np.load(CONFIG_FILE_LOCATION).item()
         except IOError:
-            print(CONFIG_FILE_LOCATION +
-                  " doesn't exist. Run the following command to create it:\nrosrun sorting_robot generate_map_config");
+            rospy.logerror("{} doesn't exist. Run the following command to create it:\nrosrun sorting_robot generate_map_config".format(CONFIG_FILE_LOCATION))
             raise IOError("Config file doesn't exist.")
         else:
             self.numRowsInGrid = mapConfiguration['num_rows']
             self.numColumnsInGrid = mapConfiguration['num_columns']
             self.cellLength = mapConfiguration['cell_length_in_meters']
             self.grid = mapConfiguration['grid']
+
+    def getPoseFromGridCoordinates(self, row, col, direction):
+        worldCoordinateValues = self.getWorldCoordinateWithDirection((row, col, direction))
+        pose = Pose()
+        pose.position.x = worldCoordinateValues[0]
+        pose.position.y = worldCoordinateValues[1]
+        pose.orientation.z = worldCoordinateValues[2]
+        return pose
+
+    # input: Pose() object
+    def convertPoseToState(self, pose):
+        theta = euler_from_quaternion([pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w])[2]
+        return self.convertPointToState((pose.position.x, pose.position.y, theta))
 
     # input: x, y, theta
     # theta is in radians, can correspond to any value between -180 and 180 degrees

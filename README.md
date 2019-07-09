@@ -116,14 +116,21 @@ Terminal 4: rosrun sorting_robot generate_launch_files
 Terminal 4: roslaunch sorting_robot controllers.launch
 Terminal 5: roslaunch sorting_robot bfsms.launch
 ~~~~
-   
+
 ## Coding Standards
 -----
+### Naming Conventions
+ - Functions: lowercase words separated by underscores
+ - Class: Camelcase starting with uppercase
+ - Methods: lowercase words separated by underscores
+ - Variables: lowercase words separated by underscores
+ - Private Functions and Methods: Start with an underscore
+ - Constants (also in Enums): All uppercase words separated by underscores
+
 Use Visual Studio Code as the editor and pep8 as the linter for python and autopep8 for autoformatting.
 ### Linter used
- - **pep8** with E501, E703 and E402 disabled
+ - **pep8** with E501 and E402 disabled
  - **E501** - places a limit on the length of a line of code
- - **E703** - doesn't allow semicolon at the end of a statement
  - **E402** - forces module level import at top of file
 
 ### Setting pep8 in VSCode
@@ -134,10 +141,10 @@ Add the following lines to the settings.json found in File/Preferences/Settings.
     "python.linting.pylintEnabled": false,
     "python.linting.pep8Enabled": true,
     "python.linting.pep8Args": [
-        "--ignore=E501,E703,E402"
+        "--ignore=E501,E402"
     ],
     "python.formatting.autopep8Args": [
-        "--ignore=E501,E703,E402"
+        "--ignore=E501,E402"
     ],
 }
 ~~~~

@@ -9,6 +9,4 @@
 	
 	<include file="$(find stdr_gui)/launch/stdr_gui.launch"/>
 	
-	<!-- <node pkg="stdr_robot" type="robot_handler" name="$(anon robot_spawn)" args="add $(find stdr_test)/robots/pandora_robot.yaml 10 15 1.5708" /> -->
-
 </launch>
