@@ -22,7 +22,7 @@ TOPIC_SEARCH_INTERVAL = 0.5;
 
 class Heatmap:
     def __init__(self, mapName, numRows, numColumns):
-        rospy.init_node('heatmap', anonymous=False, log_level=rospy.WARN);
+        rospy.init_node('heatmap', anonymous=False, log_level=rospy.INFO);
         self.csm = CoordinateSpaceManager(mapName)
         self.gridShape = (numRows, numColumns);
         self.heatmapPublisher = rospy.Publisher('/heat_map', HeatMap, queue_size=10);
@@ -106,7 +106,7 @@ def calculateHeatmap(mapName):
         rospy.logerror("{} doesn't exist. Run the following command to create it:\nrosrun sorting_robot generate_map_config".format(CONFIG_FILE_LOCATION));
     else:
         heatmap = Heatmap(mapName, mapConfiguration['num_rows'], mapConfiguration['num_columns']);
-        print('Heatmap node is running...')
+        rospy.loginfo('Heatmap node is running...')
         heatmap.run();
 
 

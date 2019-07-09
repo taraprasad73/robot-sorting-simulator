@@ -2,10 +2,10 @@ import os;
 import time;
 import rospy;
 import numpy as np;
-from std_msgs.msg import Int32;
+from enum import Enum
 from geometry_msgs.msg import Pose;
 from nav_msgs.msg import Odometry;
-from ..map_generation.generate_map_config import Cell, Direction, Turn, CellType;
+from ..map_generation.generate_map_config import CellType;
 from sorting_robot.msg import State, OccupancyMap;
 from sorting_robot.srv import TrafficService, GoalService, ReachedService;
 from ..utils import CoordinateSpaceManager;
@@ -18,10 +18,10 @@ if os.environ.get('CATKIN_WORKSPACE'):
 CONFIG_FILE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/map_configuration.npy'
 
 '''
-The sequencer has three states
-    init - starting state
-    moving - moving towards the goal
-    reached - has reached the goal
+The sequencer depends upon these three states of the robot
+    INIT - starting state
+    MOVING - moving towards the goal
+    REACHED - has reached the goal
 
 The sequencer communicates with the traffic manager and the controller as follows - 
     /subgoal service is called by the sequencer to provide the next subgoal to the controller
@@ -39,12 +39,17 @@ is called by the BFSM.
 '''
 
 
+class RobotState(Enum):
+    INIT = 0
+    MOVING = 1
+    REACHED = 2
+
+
 class Sequencer:
     def __init__(self, name):
         self.init_map();
         self.pose = State();
-        self.state = "init";
-        self.possible_states = ["init", "moving", "reached"];
+        self.state = RobotState.INIT;
         self.name = name;
         self.prev_reached = 0;
         self.csm = CoordinateSpaceManager();
@@ -65,8 +70,8 @@ class Sequencer:
 
     def received_ack(self, data):
         reached_goal = data.count;
-        print("Reached goal");
-        self.state = "reached";
+        rospy.loginfo("Reached goal");
+        self.state = RobotState.REACHED;
         self.prev_reached = reached_goal;
         return 1;
 
@@ -136,7 +141,7 @@ class Sequencer:
         path, stops = self.process_path(path, 5);
         prev = self.pose;
         for i in range(0, len(path)):
-            print('current subgoal: {} {} {}'.format(path[i].row, path[i].col, path[i].direction))
+            rospy.loginfo('current subgoal: {} {} {}'.format(path[i].row, path[i].col, path[i].direction))
             world = self.csm.getWorldCoordinateWithDirection((path[i].row, path[i].col, path[i].direction));
             pose = Pose();
             pose.position.x = world[0];
@@ -144,7 +149,7 @@ class Sequencer:
             pose.orientation.z = world[2];
             if(stops[i] is None):
                 self.goal_service(pose);
-                self.state = "moving";
+                self.state = RobotState.MOVING;
             else:
                 while(True):
                     direction = self.traffic_service(stops[i]).signal;
@@ -158,13 +163,12 @@ class Sequencer:
                         break;
                     time.sleep(1);
                 self.goal_service(pose);
-                self.state = "moving";
-            print("Published goal");
-            while(self.state == "moving"):
+                self.state = RobotState.MOVING;
+            rospy.loginfo("Published goal");
+            while(self.state == RobotState.MOVING):
                 if(rospy.is_shutdown() is True):
                     break;
             prev = path[i];
             if(rospy.is_shutdown() is True):
                 break;
-        self.state = "init";
-        return;
+        self.state = RobotState.INIT;

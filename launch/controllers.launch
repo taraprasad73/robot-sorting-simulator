@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<launch>
-	<node name="robot2_controller" args="robot2" pkg="sorting_robot" output="log" cwd="node" type="controller"></node>
-	<node name="robot3_controller" args="robot3" pkg="sorting_robot" output="log" cwd="node" type="controller"></node>
-	<node name="robot0_controller" args="robot0" pkg="sorting_robot" output="log" cwd="node" type="controller"></node>
-	<node name="robot1_controller" args="robot1" pkg="sorting_robot" output="log" cwd="node" type="controller"></node>
-</launch>

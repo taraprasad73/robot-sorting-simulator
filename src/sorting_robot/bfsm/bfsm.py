@@ -1,6 +1,7 @@
 import rospy;
 import time;
 import numpy as np;
+from enum import Enum
 from sorting_robot.msg import State, Pickup;
 from sorting_robot.srv import Path, PathInPickup, PathToBin, GetPickup, MakePickup;
 from nav_msgs.msg import Odometry;
@@ -11,12 +12,12 @@ from sequencer import *;
 '''
 The BFSM acts as the overall highest level of control of the program. It purely deals with the different
 states the robot can exist in.
-- "select_pickup" - The init state and also the state where the robot has to select a pickup station 
+- "SELECT_PICKUP" - The init state and also the state where the robot has to select a pickup station 
                     and go receive the package.
-- "go_to_pickup" - Receive the path to pickup station from the path planner and call the sequencer to move.
-- "making_pickup" - Reached the pickup station - Receive the package and the bin address.
-- "go_to_bin - Receive the path to bin from the path planner and go to the bin by calling the sequencer"
-- "make_the_drop" - Drop the package in the bin and change state to select_pickup. 
+- "GO_TO_PICKUP" - Receive the path to pickup station from the path planner and call the sequencer to move.
+- "MAKING_PICKUP" - Reached the pickup station - Receive the package and the bin address.
+- "GO_TO_BIN - Receive the path to bin from the path planner and go to the bin by calling the sequencer"
+- "MAKE_THE_DROP" - Drop the package in the bin and change state to SELECT_PICKUP. 
 
 The BFSM creates an instance of the sequencer and calls the follow_path method to move the robot to the goal
 The BFSM communicates with the path planner and the pickup manager
@@ -25,16 +26,26 @@ The BFSM communicates with the path planner and the pickup manager
 /pickup_location - Get the pickup point location from the pickup manager
 /make_pickup - Make the pickup at the pickup point from the pickup manager
 
-The charging parts can be added here eventually
+The charging parts can be added here eventually.
 '''
+
+
+class RobotState(Enum):
+    GO_TO_PICKUP = 0
+    SELECT_PICKUP = 1
+    MAKE_THE_PICKUP = 2
+    GO_TO_BIN = 3
+    MAKE_THE_DROP = 4
+    GO_TO_CHARGE = 5
+    SELECT_CHARGE = 6
+    CHARGING = 7
 
 
 class BFSM:
     def __init__(self, name):
         self.node_name = name + '_bfsm'
-        rospy.init_node(self.node_name, anonymous=False);
-        self.state = "select_pickup";
-        self.possible_states = ["go_to_pickup", "select_pickup", "making_pickup", "go_to_bin", "make_the_drop", "go_to_charge", "select_charge", "charging"];
+        rospy.init_node(self.node_name, anonymous=False, log_level=rospy.INFO);
+        self.state = RobotState.SELECT_PICKUP;
         self.name = name;
         self.pose = State();
         self.pickup_location = State();
@@ -62,29 +73,29 @@ class BFSM:
         while(self.ready is False):
             continue;
         while not rospy.is_shutdown():
-            if(self.state == "go_to_pickup"):
+            if(self.state == RobotState.GO_TO_PICKUP):
                 path = self.path_service(self.pose, self.pickup_location);
-                print("Received path from the planner to pickup");
+                rospy.loginfo("Received path from the planner to pickup");
                 self.sequencer.follow_path(path.path);
-                self.state = "make_the_pickup";
-            elif(self.state == "select_pickup"):
+                self.state = RobotState.MAKE_THE_PICKUP;
+            elif(self.state == RobotState.SELECT_PICKUP):
                 pickup_message = self.pickup_service(String(self.name)).pickup;
-                print("Received the address of the pickup");
+                rospy.loginfo("Received the address of the pickup");
                 self.pickup_location = pickup_message.location;
                 self.pickup_id = pickup_message.pickup_id;
-                self.state = "go_to_pickup";
-            elif(self.state == "make_the_pickup"):
-                print("Making the Pickup");
+                self.state = RobotState.GO_TO_PICKUP;
+            elif(self.state == RobotState.MAKE_THE_PICKUP):
+                rospy.loginfo("Making the Pickup");
                 self.bin_location = self.make_pickup_service(self.pickup_id, String(self.name)).location;
                 time.sleep(2);
-                print("Received the address of the bin");
-                self.state = "go_to_bin";
-            elif(self.state == "go_to_bin"):
+                rospy.loginfo("Received the address of the bin");
+                self.state = RobotState.GO_TO_BIN;
+            elif(self.state == RobotState.GO_TO_BIN):
                 path = self.bin_service(self.pose, self.bin_location);
-                print("Received path to the bin");
+                rospy.loginfo("Received path to the bin");
                 self.sequencer.follow_path(path.path);
-                self.state = "make_the_drop";
-            elif(self.state == "make_the_drop"):
-                print("Making the drop");
+                self.state = RobotState.MAKE_THE_DROP;
+            elif(self.state == RobotState.MAKE_THE_DROP):
+                rospy.loginfo("Making the drop");
                 time.sleep(1);
-                self.state = "select_pickup";
+                self.state = RobotState.SELECT_PICKUP;

@@ -1,11 +1,9 @@
-import sys;
 import math;
 import rospy;
 import numpy as np;
-from std_msgs.msg import Int32;
+from enum import Enum
 from nav_msgs.msg import Odometry;
 from geometry_msgs.msg import Pose, Twist;
-from sensor_msgs.msg import LaserScan;
 from tf.transformations import euler_from_quaternion;
 from sorting_robot.msg import *;
 from sorting_robot.srv import GoalService, ReachedService;
@@ -40,18 +38,23 @@ ANGUALR_VELOCITY_MULTIPLIER = 0.5
 VELOCITY_PUBLISH_FREQUENCY = 1000
 
 
+class RobotState(Enum):
+    IDLE = 0
+    MOVING = 1
+    REACHED = 2
+
+
 class Controller:
     def __init__(self, name):
         self.node_name = name + '_controller'
-        rospy.init_node(self.node_name, anonymous=False);
+        rospy.init_node(self.node_name, anonymous=False, log_level=rospy.INFO);
         self.pose = Pose();
         self.goal = Pose();
         self.velocity = Twist();
         self.robotHeading = 0;
         self.reached_count = 0;
         self.name = name;
-        self.state = "idle";
-        self.possible_states = ["idle", "moving", "reached"];
+        self.state = RobotState.IDLE;
         self.pose_subscriber = rospy.Subscriber('/' + name + '/odom', Odometry, self.odom_callback);
         self.goal_service = rospy.Service('/' + name + '/subgoal', GoalService, self.receive_goal);
         self.reached_service = rospy.ServiceProxy('/' + name + '/reached_subgoal', ReachedService);
@@ -62,15 +65,14 @@ class Controller:
         self.pose = data.pose.pose;
         self.robotHeading = euler_from_quaternion([self.pose.orientation.x, self.pose.orientation.y,
                                                    self.pose.orientation.z, self.pose.orientation.w])[2];
-        # print('odom callback: pose={} theta={}'.format(self.pose.position, self.theta))
 
     def laser_callback(self, data):
         self.laser_scan = list(data.ranges);
 
     def receive_goal(self, data):
         self.goal = data.goal
-        print("Received goal from sequencer: ({:0.3f} {:0.3f} {})".format(self.goal.position.x, self.goal.position.y, self.goal.orientation.z));
-        self.state = "moving";
+        rospy.loginfo("Received goal from sequencer: ({:0.3f} {:0.3f} {})".format(self.goal.position.x, self.goal.position.y, self.goal.orientation.z));
+        self.state = RobotState.MOVING;
         return 1;
 
     def angle_difference(self, angle1, angle2):
@@ -90,7 +92,7 @@ class Controller:
             angleToTurn = np.arctan2(math.sin(angleToGoal - self.robotHeading), math.cos(angleToGoal - self.robotHeading));
             distanceToGoal = math.sqrt(dx * dx + dy * dy);
             # use logdebug here, otherwise disk space will run out
-            print('pose: [x:{:0.3f}, y:{:0.3f}, th:{:0.3f}]  goal: [x:{:0.3f}, y:{:0.3f}, th:{:0.3f}] a2g: {:0.5f}'.format(
+            rospy.logdebug('pose: [x:{:0.3f}, y:{:0.3f}, th:{:0.3f}]  goal: [x:{:0.3f}, y:{:0.3f}, th:{:0.3f}] a2g: {:0.5f}'.format(
                 self.pose.position.x, self.pose.position.y, self.robotHeading, self.goal.position.x,
                 self.goal.position.y, self.goal.orientation.z, angleToTurn))
             if(distanceToGoal < GOAL_REACHED_TOLERANCE):
@@ -107,7 +109,7 @@ class Controller:
         # align the robot w.r.t. the orientation of the current goal
         while(not rospy.is_shutdown()):
             angleToRotate = self.angle_difference(self.goal.orientation.z, self.robotHeading);
-            print('pose: [x:{:0.3f}, y:{:0.3f}, th:{:0.3f}]  goal: [x:{:0.3f}, y:{:0.3f}, th:{:0.3f}] a2r: {:0.5f}'.format(
+            rospy.logdebug('pose: [x:{:0.3f}, y:{:0.3f}, th:{:0.3f}]  goal: [x:{:0.3f}, y:{:0.3f}, th:{:0.3f}] a2r: {:0.5f}'.format(
                 self.pose.position.x, self.pose.position.y, self.robotHeading, self.goal.position.x,
                 self.goal.position.y, self.goal.orientation.z, angleToRotate))
             if(abs(angleToRotate) < ANGLE_REACHED_TOLERANCE):
@@ -123,18 +125,12 @@ class Controller:
         return;
 
     def run(self):
-        print('{} is ready'.format(self.node_name));
+        rospy.loginfo('{} is ready'.format(self.node_name));
         while not rospy.is_shutdown():
-            if(self.state == "idle" or self.state == "reached"):
+            if(self.state == RobotState.IDLE or self.state == RobotState.REACHED):
                 continue;
-            elif(self.state == "moving"):
+            elif(self.state == RobotState.MOVING):
                 self.moveToGoal();
                 self.reached_count += 1;
-                self.state = "reached";
+                self.state = RobotState.REACHED;
                 self.reached_service(self.reached_count);
-
-
-if __name__ == "__main__":
-    name = sys.argv[1];
-    controller = Controller(name);
-    controller.run();

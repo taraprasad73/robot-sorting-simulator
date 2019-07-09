@@ -1,6 +1,5 @@
 import os
 import math
-import logging
 import rospy
 import numpy as np
 from ..map_generation.generate_map_config import Cell, Direction
