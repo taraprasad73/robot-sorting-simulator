@@ -41,7 +41,7 @@ GOAL_REACHED_TOLERANCE = 0.001  # in m
 ANGLE_REACHED_TOLERANCE = 0.001  # in radians
 LINEAR_VELOCITY_MULTIPLIER = 0.5
 ANGULAR_VELOCITY_MULTIPLIER = 0.5
-VELOCITY_PUBLISH_FREQUENCY = 1000
+VELOCITY_PUBLISH_FREQUENCY = 50
 NUMBER_OF_CELLS_TO_SCAN = 10
 
 
@@ -57,7 +57,7 @@ class Controller:
     def __init__(self, robotName):
         # create node
         self.node_name = robotName + '_controller'
-        rospy.init_node(self.node_name, anonymous=False, log_level=rospy.INFO)
+        rospy.init_node(self.node_name, anonymous=False, log_level=rospy.DEBUG)
 
         # robot's info
         self.currentPosition = Pose()
@@ -155,6 +155,9 @@ class Controller:
         occupiedCell = None
         row = self.currentRow
         col = self.currentCol
+        rospy.logdebug('Scaning for obstacles.'
+                       'Current Pos: {} {} Goal Pos: {} {}'.format(self.currentRow, self.currentCol,
+                                                                   self.currentGoalRow, self.currentGoalCol))
         self.occupancyMapLock.acquire()
         for cellsScanned in range(NUMBER_OF_CELLS_TO_SCAN):
             row += self.deltaRow
@@ -217,7 +220,6 @@ class Controller:
             elif self.robotState == RobotState.REACHED_MAIN_GOAL:
                 self.alignWithGoalOrientation()
                 self.stop_the_robot()
-                self.robotState = RobotState.IDLE
                 rospy.loginfo('Goal orientation reached. Job finished! Going to idle state.')
                 while(True):
                     status = self.reached_service(True)
@@ -225,6 +227,7 @@ class Controller:
                         rospy.logwarn('Sub goal reached acknowledgement not received by sequencer. Retrying...')
                     else:
                         break
+                self.robotState = RobotState.IDLE
 
     def avoid_obstacle(self, firstOccupiedCell):
         rospy.loginfo('Obstacle encountered at {} while {}'.format(firstOccupiedCell, self.robotState.name))
