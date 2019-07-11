@@ -370,8 +370,9 @@ def getCenterGrid(r, c, m, n, p, q):
     return grid
 
 
-def checkValidity(r, c, m, n, p, q, pickupRows, pickupColumns, chargingRows, isNotSymmetric):
+def checkValidity(k, m, n, p, q, pickupRows, pickupColumns, chargingRows, isNotSymmetric):
     # its guranteed that there's atleast two horizontal and vertical highways
+    MIN_K = 1
     MIN_M = 5
     MIN_N = 5
     MIN_PICKUP_ROWS = 5
@@ -379,20 +380,14 @@ def checkValidity(r, c, m, n, p, q, pickupRows, pickupColumns, chargingRows, isN
     MAX_PICKUP_COLUMNS = n - 2
     MIN_CHARGING_ROWS = 5
 
+    if k < MIN_K:
+        parser.error("k should be atleast {}".format(MIN_K))
     if m < MIN_M:
         parser.error("m should be atleast {}".format(MIN_M))
     if n < MIN_N:
         parser.error("n should be atleast {}".format(MIN_N))
 
-    MIN_R = m + 4
-    MIN_C = n + 4
-
     if isNotSymmetric:
-        if r < MIN_R:
-            parser.error("r should be atleast {}".format(MIN_R))
-        if c < MIN_C:
-            parser.error("c should be atleast {}".format(MIN_C))
-
         MIN_P = 1
         MAX_P = r - (3 + m)
 
@@ -403,16 +398,6 @@ def checkValidity(r, c, m, n, p, q, pickupRows, pickupColumns, chargingRows, isN
         if q < MIN_Q and q > MAX_Q:
             parser.error("q should be between {} and {}".format(MIN_Q, MAX_Q))
     else:
-        if r < MIN_R:
-            parser.error("r should be atleast {}".format(MIN_R))
-        if c < MIN_C:
-            parser.error("c should be atleast {}".format(MIN_C))
-
-        if r % (m + 2) != 2:
-            parser.error("r should be of the form (m + 2) * k + 2")
-        if c % (n + 2) != 2:
-            parser.error("c should be of the form (n + 2) * k + 2")
-
         if p != 1:
             parser.error("p should be 1 for the grid to be symmetric")
         if q != 1:
@@ -446,10 +431,8 @@ def checkValidity(r, c, m, n, p, q, pickupRows, pickupColumns, chargingRows, isN
 
 def parseArgs():
     parser = argparse.ArgumentParser(description="parameters of the bin area")
-    parser.add_argument("-r", default=79, type=int,
-                        help="total number of rows")
-    parser.add_argument("-c", default=79, type=int,
-                        help="total number of columns")
+    parser.add_argument("-k", default=7, type=int,
+                        help="total number of blocks of bin areas")
     parser.add_argument("-m", default=9, type=int,
                         help="number of rows in a block")
     parser.add_argument("-n", default=9, type=int,
@@ -460,7 +443,7 @@ def parseArgs():
                         help="number of columns in the pickup area")
     parser.add_argument("--charging-rows", default=9, type=int,
                         help="number of rows in the charging area")
-    parcer.add_argument("--cell-length", default=0.5, type=float,
+    parser.add_argument("--cell-length", default=0.5, type=float,
                         help="cell length in meters")
     parser.add_argument(
         "-p", default=1, type=int, help="1-indexed row number of first horizontal highway")
@@ -469,9 +452,9 @@ def parseArgs():
     parser.add_argument('--small-map', default=False,
                         action='store_true', help="whether to keep the map small or not")
     parser.add_argument('--is-not-symmetric', default=False,
-                        action='store_true', help="whether to keep the grid symmetric or not")
+                        action='store_true', help="whether to keep the grid symmetric or not (experimental)")
     args = parser.parse_args()
-    return args.cell_length, args.r, args.c, args.m, args.n, args.p, args.q, args.pickup_rows, args.pickup_columns, args.charging_rows, args.small_map, args.is_not_symmetric
+    return args.cell_length, args.k, args.m, args.n, args.p, args.q, args.pickup_rows, args.pickup_columns, args.charging_rows, args.small_map, args.is_not_symmetric
 
 
 # Assigns which types of cells are prohibited to move into for each cell type
@@ -496,12 +479,12 @@ def assignProhibitedTypes():
 
 
 def generateMapConfig():
-    cell_length, r, c, m, n, p, q, pickupRows, pickupColumns, chargingRows, smallMap, isNotSymmetric = parseArgs()
+    cell_length, k, m, n, p, q, pickupRows, pickupColumns, chargingRows, smallMap, isNotSymmetric = parseArgs()
     if isNotSymmetric:
         print("Not fully implemented yet!")
         exit(1)
 
-    checkValidity(r, c, m, n, p, q, pickupRows,
+    checkValidity(k, m, n, p, q, pickupRows,
                   pickupColumns, chargingRows, isNotSymmetric)
 
     # convert to 0 indexing
@@ -512,22 +495,26 @@ def generateMapConfig():
         m = 5
         n = 5
         k = 2
-        r = (m + 2) * k + 2
-        c = (n + 2) * k + 2
+        pickupColumns = n - 2
+        pickupRows = 3
+        chargingRows = 2
+
+    # calculate r and c for the center grid
+    r = (m + 2) * k + 2
+    c = (n + 2) * k + 2
 
     assignProhibitedTypes()
 
     centerGrid = getCenterGrid(r, c, m, n, p, q)
     grid = centerGrid
 
-    if not smallMap:
-        bottomPickupArea = getBottomPickupArea(n, c, pickupRows, pickupColumns)
-        bottomChargingArea = getBottomChargingArea(n, c, chargingRows)
-        bottomGrid = np.concatenate((bottomPickupArea, bottomChargingArea), axis=0)
-        bottomGrid = addChargingLanes(n, bottomGrid)
-        topGrid = getTopGrid(bottomGrid, n, c)
-        grid = np.concatenate(
-            (topGrid, centerGrid, bottomGrid), axis=0)
+    bottomPickupArea = getBottomPickupArea(n, c, pickupRows, pickupColumns)
+    bottomChargingArea = getBottomChargingArea(n, c, chargingRows)
+    bottomGrid = np.concatenate((bottomPickupArea, bottomChargingArea), axis=0)
+    bottomGrid = addChargingLanes(n, bottomGrid)
+    topGrid = getTopGrid(bottomGrid, n, c)
+    grid = np.concatenate(
+        (topGrid, centerGrid, bottomGrid), axis=0)
 
     for row in range(grid.shape[0]):
         for col in range(grid.shape[1]):

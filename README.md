@@ -95,11 +95,20 @@ Any launch file can be executed as rosrun sorting_robot name_of_launch_file [com
 
 ### Generate the maps
 -----
+For the large map with default values.
 ~~~~
-rosrun sorting_robot generate_map_config (execute this first)
+rosrun sorting_robot generate_map_config
 rosrun sorting_robot generate_binary_map
 rosrun sorting_robot generate_networkx_graph
-rosrun sorting_robot generate_grid_image (optional)
+rosrun sorting_robot generate_grid_image
+~~~~
+
+For the small map with default values.
+~~~~
+rosrun sorting_robot generate_map_config --small-map
+rosrun sorting_robot generate_binary_map
+rosrun sorting_robot generate_networkx_graph
+rosrun sorting_robot generate_grid_image --map-name small_map
 ~~~~
 The output files will be generated in $HOME/catkin_ws/src/sorting_robot/data/ folder.
 
