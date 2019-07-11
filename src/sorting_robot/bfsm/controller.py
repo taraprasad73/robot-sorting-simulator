@@ -36,13 +36,13 @@ Some of the terms used are explained below:
 WARNING: Using debug mode for log level will consume large amount of disk space.
 '''
 
-MAX_LINEAR_VELOCITY = 1  # in m/s
+MAX_LINEAR_VELOCITY = 3  # in m/s
 GOAL_REACHED_TOLERANCE = 0.001  # in m
 ANGLE_REACHED_TOLERANCE = 0.001  # in radians
 LINEAR_VELOCITY_MULTIPLIER = 0.5
 ANGULAR_VELOCITY_MULTIPLIER = 0.5
 VELOCITY_PUBLISH_FREQUENCY = 50
-NUMBER_OF_CELLS_TO_SCAN = 10
+NUMBER_OF_CELLS_TO_SCAN = 50
 
 
 class RobotState(Enum):
@@ -57,7 +57,7 @@ class Controller:
     def __init__(self, robotName):
         # create node
         self.node_name = robotName + '_controller'
-        rospy.init_node(self.node_name, anonymous=False, log_level=rospy.DEBUG)
+        rospy.init_node(self.node_name, anonymous=False, log_level=rospy.INFO)
 
         # robot's info
         self.currentPosition = Pose()
@@ -158,23 +158,24 @@ class Controller:
         rospy.logdebug('Scaning for obstacles.'
                        'Current Pos: {} {} Goal Pos: {} {}'.format(self.currentRow, self.currentCol,
                                                                    self.currentGoalRow, self.currentGoalCol))
-        self.occupancyMapLock.acquire()
-        for cellsScanned in range(NUMBER_OF_CELLS_TO_SCAN):
-            row += self.deltaRow
-            col += self.deltaCol
-            if self.occupancyMap[row][col] is True:
-                occupiedCell = (row, col)
-                break
-            if row == self.currentGoalRow and col == self.currentGoalCol:
-                break
-        self.occupancyMapLock.release()
+        if not(row == self.currentGoalRow and col == self.currentGoalCol):
+            self.occupancyMapLock.acquire()
+            for cellsScanned in range(NUMBER_OF_CELLS_TO_SCAN):
+                row += self.deltaRow
+                col += self.deltaCol
+                if self.occupancyMap[row][col] is True:
+                    occupiedCell = (row, col)
+                    break
+                if row == self.currentGoalRow and col == self.currentGoalCol:
+                    break
+            self.occupancyMapLock.release()
         return occupiedCell
 
     def get_nearest_non_intersection_cell(self, firstOccupiedCell):
         row, col = firstOccupiedCell
         while(self.mip.isIntersection(row, col)):
-            row += self.deltaRow
-            col += self.deltaCol
+            row -= self.deltaRow
+            col -= self.deltaCol
             # if after going back the cell is the one with the robot in it, and is still an intersection
             if row == self.currentRow and col == self.currentCol:
                 return None

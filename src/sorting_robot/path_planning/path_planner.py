@@ -55,9 +55,9 @@ def updateWeights(data):
     graphWeightsLock.release()
 
 
-def heuristic(self, currentNode, targetNode):
+def heuristic(currentNode, targetNode):
     timeToMove = (abs(currentNode[0] - targetNode[0]) + abs(currentNode[1] - targetNode[1])) / RobotInfo.getAverageLinearSpeed()
-    timeToTurn = abs(currentNode[2] - targetNode[2]) / RobotInfo.getAverageLinearSpeed()
+    timeToTurn = abs(currentNode[2] - targetNode[2]) / RobotInfo.getAverageAngularSpeed()
     estimatedPathCost = timeToMove + timeToTurn * TURN_PENALTY
     return estimatedPathCost
 
@@ -66,7 +66,7 @@ def getPath(sourceNode, targetNode):
     nodesInPath = []
     try:
         graphWeightsLock.acquire()
-        nodesInPath = nx.astar_path(G, sourceNode, targetNode)
+        nodesInPath = nx.astar_path(G, sourceNode, targetNode, heuristic=heuristic)
         graphWeightsLock.release()
         nodesInPath = [State(*node) for node in nodesInPath]
     except nx.NetworkXNoPath:
@@ -78,7 +78,7 @@ def getPathLength(G, sourceNode, neighbourNode):
     pathLength = None
     try:
         graphWeightsLock.acquire()
-        pathLength = nx.astar_path_length(G, sourceNode, neighbourNode)
+        pathLength = nx.astar_path_length(G, sourceNode, neighbourNode, heuristic=heuristic)
         graphWeightsLock.release()
     except nx.NetworkXNoPath:
         print("No path between {} and {}".format(sourceNode, neighbourNode))

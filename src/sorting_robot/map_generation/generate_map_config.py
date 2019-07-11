@@ -460,6 +460,8 @@ def parseArgs():
                         help="number of columns in the pickup area")
     parser.add_argument("--charging-rows", default=9, type=int,
                         help="number of rows in the charging area")
+    parcer.add_argument("--cell-length", default=0.5, type=float,
+                        help="cell length in meters")
     parser.add_argument(
         "-p", default=1, type=int, help="1-indexed row number of first horizontal highway")
     parser.add_argument(
@@ -469,7 +471,7 @@ def parseArgs():
     parser.add_argument('--is-not-symmetric', default=False,
                         action='store_true', help="whether to keep the grid symmetric or not")
     args = parser.parse_args()
-    return args.r, args.c, args.m, args.n, args.p, args.q, args.pickup_rows, args.pickup_columns, args.charging_rows, args.small_map, args.is_not_symmetric
+    return args.cell_length, args.r, args.c, args.m, args.n, args.p, args.q, args.pickup_rows, args.pickup_columns, args.charging_rows, args.small_map, args.is_not_symmetric
 
 
 # Assigns which types of cells are prohibited to move into for each cell type
@@ -494,7 +496,7 @@ def assignProhibitedTypes():
 
 
 def generateMapConfig():
-    r, c, m, n, p, q, pickupRows, pickupColumns, chargingRows, smallMap, isNotSymmetric = parseArgs()
+    cell_length, r, c, m, n, p, q, pickupRows, pickupColumns, chargingRows, smallMap, isNotSymmetric = parseArgs()
     if isNotSymmetric:
         print("Not fully implemented yet!")
         exit(1)
@@ -616,7 +618,7 @@ def generateMapConfig():
         'pickup_queue_size': pickupRows * 2 + pickupColumns - 2,
         'num_rows': grid.shape[0],
         'num_columns': grid.shape[1],
-        'cell_length_in_meters': 0.5,
+        'cell_length_in_meters': cell_length,
     }
 
     if smallMap:

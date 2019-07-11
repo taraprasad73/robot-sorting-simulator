@@ -16,8 +16,9 @@ if os.environ.get('CATKIN_WORKSPACE'):
     CATKIN_WORKSPACE = os.environ['CATKIN_WORKSPACE']
 CONFIG_FILE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/{}_configuration.npy'
 
-HEATMAP_PUBLISH_RATE = 2
+HEATMAP_PUBLISH_RATE = 50
 TOPIC_SEARCH_INTERVAL = 0.5
+ETA = 0.3  # per second
 
 
 class Heatmap:
@@ -28,7 +29,6 @@ class Heatmap:
         self.heatmapPublisher = rospy.Publisher('/heat_map', HeatMap, queue_size=10)
         self.occupancyPublisher = rospy.Publisher('/occupancy_map', OccupancyMap, queue_size=10)
         self.activeRobots = {}
-        self.eta = 0.3
         self.previousMap = np.zeros((numRows, numColumns))
         rospy.Timer(rospy.Duration(TOPIC_SEARCH_INTERVAL), self.findTopics)
         self.activeRobotsLock = threading.Lock()
@@ -78,9 +78,10 @@ class Heatmap:
         for pose in activePositions:
             point = (pose.position.x, pose.position.y)
             cells = self.csm.convertPointToCells(point)
+            firstOccupiedCell = self.csm.get_first_occupied_cell(point)
             for (r, c) in cells:
                 new_map[r][c] = 1
-                occupancyMap[r][c] = True
+            occupancyMap[firstOccupiedCell] = True
         final_map = self.eta * self.previousMap + new_map
         self.previousMap = final_map
         return occupancyMap, final_map

@@ -86,6 +86,13 @@ class CoordinateSpaceManager:
             direction = 270
         return row, col, direction
 
+    # input: x, y
+    def get_first_occupied_cell(self, point):
+        x, y = point[0], point[1]
+        col = int(x // self.cellLength)
+        row = self.numRowsInGrid - int(y // self.cellLength) - 1
+        return row, col
+
     # the input point is the mid point of the robot in world coordinates
     def convertPointToCells(self, point):
         x, y = point[0], point[1]
@@ -144,7 +151,6 @@ class CoordinateSpaceManager:
         y = (r + 0.5) * self.cellLength
         RANGE_Y = self.numRowsInGrid * self.cellLength
         y = RANGE_Y - y
-
         return (x, y, theta)
 
     # returns the coordinates of the lower left corner of the cell in world coordinates
