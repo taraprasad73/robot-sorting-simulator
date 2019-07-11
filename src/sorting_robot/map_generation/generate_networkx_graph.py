@@ -12,9 +12,9 @@ HOME_DIR = os.environ['HOME']
 CATKIN_WORKSPACE = HOME_DIR + '/catkin_ws/'
 if os.environ.get('CATKIN_WORKSPACE'):
     CATKIN_WORKSPACE = os.environ['CATKIN_WORKSPACE']
-CONFIG_FILE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/map_configuration.npy'
-GRAPH_PICKLED_FILE_SAVE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/graph.gpickle'
-GRAPH_IMAGE_FILE_SAVE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/graph.svg'
+CONFIG_FILE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/{}_configuration.npy'
+GRAPH_PICKLED_FILE_SAVE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/{}_graph.gpickle'
+GRAPH_IMAGE_FILE_SAVE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/{}_graph.svg'
 
 
 # Note that these weights are just placeholders, the actual weights change with heatmap
@@ -105,7 +105,11 @@ def getNodePositions(G, grid):
     return pos
 
 
-def generateNetworkxGraph(saveFig=False):
+def generateNetworkxGraph(mapName, saveFig=False):
+    global CONFIG_FILE_LOCATION, GRAPH_PICKLED_FILE_SAVE_LOCATION, GRAPH_IMAGE_FILE_SAVE_LOCATION
+    CONFIG_FILE_LOCATION = CONFIG_FILE_LOCATION.format(mapName)
+    GRAPH_PICKLED_FILE_SAVE_LOCATION = GRAPH_PICKLED_FILE_SAVE_LOCATION.format(mapName)
+    GRAPH_IMAGE_FILE_SAVE_LOCATION = GRAPH_IMAGE_FILE_SAVE_LOCATION.format(mapName)
     try:
         mapConfiguration = np.load(CONFIG_FILE_LOCATION).item()
     except IOError:

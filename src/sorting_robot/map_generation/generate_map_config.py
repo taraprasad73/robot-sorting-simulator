@@ -1,7 +1,9 @@
 import argparse
+import ConfigParser
 import numpy as np
 import copy
 from enum import Enum
+import logging
 import os
 
 HOME_DIR = os.environ['HOME']
@@ -10,8 +12,9 @@ if os.environ.get('CATKIN_WORKSPACE'):
     CATKIN_WORKSPACE = os.environ['CATKIN_WORKSPACE']
 if not os.path.exists(CATKIN_WORKSPACE + '/src/sorting_robot/data'):
     os.makedirs(CATKIN_WORKSPACE + '/src/sorting_robot/data')
-CONFIG_FILE_SAVE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/map_configuration.npy'
-SMALL_CONFIG_FILE_SAVE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/small_map_configuration.npy'
+
+CONFIG_PARSER_FILE = CATKIN_WORKSPACE + '/src/sorting_robot/data/{}_params.ini'
+CONFIG_FILE_SAVE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/{}_configuration.npy'
 
 
 class CellType(Enum):
@@ -375,17 +378,17 @@ def checkValidity(k, m, n, p, q, pickupRows, pickupColumns, chargingRows, isNotS
     MIN_K = 1
     MIN_M = 5
     MIN_N = 5
-    MIN_PICKUP_ROWS = 5
-    MIN_PICKUP_COLUMNS = 7
+    MIN_PICKUP_ROWS = 3
+    MIN_PICKUP_COLUMNS = 3
     MAX_PICKUP_COLUMNS = n - 2
-    MIN_CHARGING_ROWS = 5
+    MIN_CHARGING_ROWS = 2
 
     if k < MIN_K:
-        parser.error("k should be atleast {}".format(MIN_K))
+        logging.error("k should be atleast {}".format(MIN_K))
     if m < MIN_M:
-        parser.error("m should be atleast {}".format(MIN_M))
+        logging.error("m should be atleast {}".format(MIN_M))
     if n < MIN_N:
-        parser.error("n should be atleast {}".format(MIN_N))
+        logging.error("n should be atleast {}".format(MIN_N))
 
     if isNotSymmetric:
         MIN_P = 1
@@ -394,67 +397,34 @@ def checkValidity(k, m, n, p, q, pickupRows, pickupColumns, chargingRows, isNotS
         MIN_Q = 1
         MAX_Q = c - (3 + n)
         if p < MIN_P and p > MAX_P:
-            parser.error("p should be between {} and {}".format(MIN_P, MAX_P))
+            logging.error("p should be between {} and {}".format(MIN_P, MAX_P))
         if q < MIN_Q and q > MAX_Q:
-            parser.error("q should be between {} and {}".format(MIN_Q, MAX_Q))
+            logging.error("q should be between {} and {}".format(MIN_Q, MAX_Q))
     else:
         if p != 1:
-            parser.error("p should be 1 for the grid to be symmetric")
+            logging.error("p should be 1 for the grid to be symmetric")
         if q != 1:
-            parser.error("q should be 1 for the grid to be symmetric")
+            logging.error("q should be 1 for the grid to be symmetric")
 
     if m % 4 != 1:
-        parser.error("m should be of the form 4k + 1")
+        logging.error("m should be of the form 4k + 1")
     if n % 4 != 1:
-        parser.error("n should be of the form 4k + 1")
+        logging.error("n should be of the form 4k + 1")
 
     if pickupColumns < MIN_PICKUP_COLUMNS:
-        parser.error(
-            "pickup_columns should be atleast {}".format(MIN_PICKUP_COLUMNS))
+        logging.error("pickup_columns should be atleast {}".format(MIN_PICKUP_COLUMNS))
 
     if pickupColumns > MAX_PICKUP_COLUMNS:
-        parser.error(
-            "pickup_columns should be atmost {}".format(MAX_PICKUP_COLUMNS))
+        logging.error("pickup_columns should be atmost {}".format(MAX_PICKUP_COLUMNS))
 
     if pickupColumns % 4 != 3:
-        parser.error(
-            "pickup_columns should be atleast {}".format(MIN_PICKUP_COLUMS))
+        logging.error("pickup_columns should be atleast {}".format(MIN_PICKUP_COLUMS))
 
     if pickupRows < MIN_PICKUP_ROWS:
-        parser.error(
-            "pickup_rows should be atleast {}".format(MIN_PICKUP_ROWS))
+        logging.error("pickup_rows should be atleast {}".format(MIN_PICKUP_ROWS))
 
     if chargingRows < MIN_CHARGING_ROWS:
-        parser.error(
-            "charging_rows should be atleast {}".format(MIN_CHARGING_ROWS))
-
-
-def parseArgs():
-    parser = argparse.ArgumentParser(description="parameters of the bin area")
-    parser.add_argument("-k", default=7, type=int,
-                        help="total number of blocks of bin areas")
-    parser.add_argument("-m", default=9, type=int,
-                        help="number of rows in a block")
-    parser.add_argument("-n", default=9, type=int,
-                        help="number of columns in a block")
-    parser.add_argument("--pickup-rows", default=9, type=int,
-                        help="number of rows in the pickup area")
-    parser.add_argument("--pickup-columns", default=7, type=int,
-                        help="number of columns in the pickup area")
-    parser.add_argument("--charging-rows", default=9, type=int,
-                        help="number of rows in the charging area")
-    parser.add_argument("--cell-length", default=0.5, type=float,
-                        help="cell length in meters")
-    parser.add_argument(
-        "-p", default=1, type=int, help="1-indexed row number of first horizontal highway")
-    parser.add_argument(
-        "-q", default=1, type=int, help="1-indexed column number of first vertical highway")
-    parser.add_argument('--small-map', default=False,
-                        action='store_true', help="whether to keep the map small or not")
-    parser.add_argument('--is-not-symmetric', default=False,
-                        action='store_true', help="whether to keep the grid symmetric or not (experimental)")
-    args = parser.parse_args()
-    return args.cell_length, args.k, args.m, args.n, args.p, args.q, args.pickup_rows, args.pickup_columns, args.charging_rows, args.small_map, args.is_not_symmetric
+        logging.error("charging_rows should be atleast {}".format(MIN_CHARGING_ROWS))
 
 
 # Assigns which types of cells are prohibited to move into for each cell type
@@ -478,26 +448,44 @@ def assignProhibitedTypes():
     PROHIBITED_CELL_TYPES[CellType.HIGHWAY_STREET_INTERSECTION].add(CellType.HIGHWAY_STREET_FORK)
 
 
+def parseArgs():
+    parser = argparse.ArgumentParser(description="parameters of the bin area")
+    parser.add_argument("--map-name", default='map', type=str, help="name of the map file")
+    parser.add_argument('--is-not-symmetric', default=False,
+                        action='store_true', help="whether to keep the grid symmetric or not (experimental)")
+    args = parser.parse_args()
+    return args.map_name, args.is_not_symmetric
+
+
+def parseConfigFile(mapName):
+    config = ConfigParser.RawConfigParser()
+    config.read(CONFIG_PARSER_FILE.format(mapName))
+    k = config.getint('center_grid', 'number_of_blocks')
+    m = config.getint('center_grid', 'number_of_rows_in_a_block')
+    n = config.getint('center_grid', 'number_of_columns_in_a_block')
+    p = config.getint('center_grid', 'first_highway_row')
+    q = config.getint('center_grid', 'first_highway_column')
+    pickupRows = config.getint('pickup_area', 'number_of_pickup_rows')
+    pickupColumns = config.getint('pickup_area', 'number_of_pickup_columns')
+    chargingRows = config.getint('charging_area', 'number_of_charging_rows')
+    cellLength = config.getfloat('global', 'cell_length')
+    return cellLength, k, m, n, p, q, pickupRows, pickupColumns, chargingRows
+
+
 def generateMapConfig():
-    cell_length, k, m, n, p, q, pickupRows, pickupColumns, chargingRows, smallMap, isNotSymmetric = parseArgs()
+    mapName, isNotSymmetric = parseArgs()
     if isNotSymmetric:
-        print("Not fully implemented yet!")
+        print("Experimental. Not fully implemented yet!")
         exit(1)
 
-    checkValidity(k, m, n, p, q, pickupRows,
-                  pickupColumns, chargingRows, isNotSymmetric)
+    global CONFIG_FILE_SAVE_LOCATION
+    CONFIG_FILE_SAVE_LOCATION = CONFIG_FILE_SAVE_LOCATION.format(mapName)
+    cell_length, k, m, n, p, q, pickupRows, pickupColumns, chargingRows = parseConfigFile(mapName)
+    checkValidity(k, m, n, p, q, pickupRows, pickupColumns, chargingRows, isNotSymmetric)
 
     # convert to 0 indexing
     p -= 1
     q -= 1
-
-    if smallMap:
-        m = 5
-        n = 5
-        k = 2
-        pickupColumns = n - 2
-        pickupRows = 3
-        chargingRows = 2
 
     # calculate r and c for the center grid
     r = (m + 2) * k + 2
@@ -607,11 +595,7 @@ def generateMapConfig():
         'num_columns': grid.shape[1],
         'cell_length_in_meters': cell_length,
     }
-
-    if smallMap:
-        np.save(SMALL_CONFIG_FILE_SAVE_LOCATION, np.array(mapConfiguration))
-    else:
-        np.save(CONFIG_FILE_SAVE_LOCATION, np.array(mapConfiguration))
+    np.save(CONFIG_FILE_SAVE_LOCATION, np.array(mapConfiguration))
 
 
 if __name__ == "__main__":

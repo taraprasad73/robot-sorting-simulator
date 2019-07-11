@@ -103,13 +103,16 @@ rosrun sorting_robot generate_networkx_graph
 rosrun sorting_robot generate_grid_image
 ~~~~
 
-For the small map with default values.
+For the default small map template.
 ~~~~
-rosrun sorting_robot generate_map_config --small-map
-rosrun sorting_robot generate_binary_map
-rosrun sorting_robot generate_networkx_graph
+rosrun sorting_robot generate_map_config --map-name small_map
+rosrun sorting_robot generate_binary_map --map-name small_map
+rosrun sorting_robot generate_networkx_graph --map-name small_map
 rosrun sorting_robot generate_grid_image --map-name small_map
 ~~~~
+
+For modifying the parameters copy the map_params.ini into a file [map_name]_params.ini and modify it. Pass the map_name
+argument into argparse as shown in the small_map example above. 
 The output files will be generated in $HOME/catkin_ws/src/sorting_robot/data/ folder.
 
 ### Launch the entire sorting_robot system
