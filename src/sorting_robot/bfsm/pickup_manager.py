@@ -10,6 +10,7 @@ from ..map_generation.generate_map_config import Cell, Direction, Turn, CellType
 from ..utils.map_information_provider import CONFIG_FILE_LOCATION
 
 """
+TODO use the MIP class, don't directly access the mapConfiguration data
 The pickup manager deals with the pickcup related communications.
 /pickup_location - When a robot makes a call for the pickup location, the location of the queue with
                     the least amount of robots is provided. The robot is added to that queue.

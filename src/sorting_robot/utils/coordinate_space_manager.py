@@ -64,8 +64,7 @@ class CoordinateSpaceManager:
     # theta is in radians, can correspond to any value between -180 and 180 degrees
     def convertPointToState(self, point):
         x, y, theta = point[0], point[1], point[2]
-        col = int(x // self.cellLength)
-        row = self.numRowsInGrid - int(y // self.cellLength) - 1
+        row, col = self.get_cell_containing_center((x, y))
 
         theta = math.degrees(theta) if(theta > 0) else math.degrees(theta) + 360
         # check cyclic cases properly
@@ -81,7 +80,8 @@ class CoordinateSpaceManager:
         return row, col, direction
 
     # input: x, y
-    def get_first_occupied_cell(self, point):
+    # output: returns the cell (row, col) which contains the center of the robot
+    def get_cell_containing_center(self, point):
         x, y = point[0], point[1]
         col = int(x // self.cellLength)
         row = self.numRowsInGrid - int(y // self.cellLength) - 1

@@ -74,7 +74,7 @@ class Heatmap:
         for pose in activePositions:
             point = (pose.position.x, pose.position.y)
             cells = self.csm.convertPointToCells(point)
-            firstOccupiedCell = self.csm.get_first_occupied_cell(point)
+            firstOccupiedCell = self.csm.get_cell_containing_center(point)
             for (r, c) in cells:
                 new_map[r][c] = 1
             occupancyMap[firstOccupiedCell] = True

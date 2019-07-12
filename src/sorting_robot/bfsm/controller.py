@@ -36,13 +36,13 @@ Some of the terms used are explained below:
 WARNING: Using debug mode for log level will consume large amount of disk space.
 '''
 
-MAX_LINEAR_VELOCITY = 3  # in m/s
+MAX_LINEAR_VELOCITY = 2  # in m/s
 GOAL_REACHED_TOLERANCE = 0.001  # in m
 ANGLE_REACHED_TOLERANCE = 0.001  # in radians
 LINEAR_VELOCITY_MULTIPLIER = 0.5
 ANGULAR_VELOCITY_MULTIPLIER = 0.5
 VELOCITY_PUBLISH_FREQUENCY = 50
-NUMBER_OF_CELLS_TO_SCAN = 50
+NUMBER_OF_CELLS_TO_SCAN = 20
 
 
 class RobotState(Enum):
@@ -103,7 +103,7 @@ class Controller:
         cols = data.columns
         self.occupancyMapLock.acquire()
         # TODO use rospy.numpy_msg instead of converting list to a numpy array
-        self.occupancyMap = np.array(data.occupancy_values).reshape((rows, cols))
+        self.occupancyMap = np.array(data.occupancy_values, dtype=bool).reshape((rows, cols))
         self.occupancyMapLock.release()
 
     def odom_callback(self, data):
@@ -116,6 +116,7 @@ class Controller:
         self.currentGoalRow = row
         self.currentGoalCol = col
         self.currentGoal = goal
+        rospy.loginfo('Current goal changed to: {} {}'.format(row, col))
 
     # This function should be invoked by the sequencer only when the robot is in the idle state.
     def receive_goal(self, data):
@@ -155,28 +156,35 @@ class Controller:
         occupiedCell = None
         row = self.currentRow
         col = self.currentCol
-        rospy.logdebug('Scaning for obstacles.'
-                       'Current Pos: {} {} Goal Pos: {} {}'.format(self.currentRow, self.currentCol,
-                                                                   self.currentGoalRow, self.currentGoalCol))
+        rospy.logdebug('Current Pos: {} {} '
+                       'Goal Pos: {} {} '
+                       'delRow:{} delCol:{}'.format(self.currentRow, self.currentCol,
+                                                    self.currentGoalRow, self.currentGoalCol,
+                                                    self.deltaRow, self.deltaCol))
         if not(row == self.currentGoalRow and col == self.currentGoalCol):
             self.occupancyMapLock.acquire()
             for cellsScanned in range(NUMBER_OF_CELLS_TO_SCAN):
                 row += self.deltaRow
                 col += self.deltaCol
-                if self.occupancyMap[row][col] is True:
+                rospy.logdebug('Cell scanned ({},{}). Occupied: {}'.format(row, col, self.occupancyMap[row][col]))
+                if self.occupancyMap[row][col]:
                     occupiedCell = (row, col)
                     break
                 if row == self.currentGoalRow and col == self.currentGoalCol:
                     break
             self.occupancyMapLock.release()
+        if occupiedCell is not None:
+            rospy.logdebug('Occupied cell: ({},{})'.format(occupiedCell[0], occupiedCell[1]))
         return occupiedCell
 
     def get_nearest_non_intersection_cell(self, firstOccupiedCell):
         row, col = firstOccupiedCell
+        row -= self.deltaRow
+        col -= self.deltaCol
         while(self.mip.isIntersection(row, col)):
             row -= self.deltaRow
             col -= self.deltaCol
-            # if after going back the cell is the one with the robot in it, and is still an intersection
+            # if after going back, the cell is the one with the robot in it, and is still an intersection
             if row == self.currentRow and col == self.currentCol:
                 return None
         return (row, col)
@@ -193,7 +201,7 @@ class Controller:
                 continue
             elif self.robotState == RobotState.WAITING_FOR_CLEARANCE:
                 if self.get_first_occupied_cell() is None:
-                    self.currentGoal = self.mainGoal
+                    self.set_current_goal(self.mainGoalRow, self.mainGoalCol, self.mainGoal)
                     self.robotState = RobotState.MOVING_TO_MAIN_GOAL
                     rospy.loginfo('Clearance received! Going to main goal...')
             elif self.robotState == RobotState.MOVING_TO_MAIN_GOAL:
@@ -232,11 +240,11 @@ class Controller:
 
     def avoid_obstacle(self, firstOccupiedCell):
         rospy.loginfo('Obstacle encountered at {} while {}'.format(firstOccupiedCell, self.robotState.name))
-        nearestNonIntersectionCell = get_nearest_non_intersection_cell(self, firstOccupiedCell)
+        nearestNonIntersectionCell = self.get_nearest_non_intersection_cell(firstOccupiedCell)
         if nearestNonIntersectionCell is not None:
             row, col = nearestNonIntersectionCell
             # use the current direction of the robot for the temporary goal
-            goal = self.getPoseFromGridCoordinates(row, col, self.directionInDegrees)
+            goal = self.csm.getPoseFromGridCoordinates(row, col, self.directionInDegrees)
             self.set_current_goal(row, col, goal)
             self.robotState = RobotState.MOVING_TO_TEMPORARY_GOAL
             rospy.loginfo('Going to nearest non-intersection cell: {}.'.format(nearestNonIntersectionCell))
@@ -245,6 +253,7 @@ class Controller:
             self.robotState = RobotState.WAITING_FOR_CLEARANCE
             rospy.logwarn("Robot had to stop at an intersection cell."
                           "This case should be prevented from happening.")
+            # TODO move to a non-intersection cell as soon as possible
 
     def get_distances(self):
         dx = self.currentGoal.position.x - self.currentPosition.position.x

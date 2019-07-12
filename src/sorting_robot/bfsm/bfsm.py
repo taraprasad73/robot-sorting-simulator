@@ -39,6 +39,7 @@ class RobotState(Enum):
     GO_TO_CHARGE = 5
     SELECT_CHARGE = 6
     CHARGING = 7
+    IDLE = 8
 
 
 class BFSM:
