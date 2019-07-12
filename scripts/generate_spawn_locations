@@ -8,10 +8,10 @@ def parseArgs():
     parser = argparse.ArgumentParser(
         description="parameters for generating spawn locations")
     parser.add_argument("n", type=int, help="total number of robots")
-    parser.add_argument("--map-name", default='map', type=str, help="name of the map file")
     args = parser.parse_args()
-    return args.map_name, args.n
+    return args.n
 
 
 if __name__ == '__main__':
-    generateSpawnLocations(*parseArgs())
+    numberOfRobots = parseArgs()
+    generateSpawnLocations(numberOfRobots)

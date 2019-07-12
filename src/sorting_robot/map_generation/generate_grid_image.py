@@ -8,15 +8,9 @@ from matplotlib.table import Table
 from matplotlib.lines import Line2D
 from enum import Enum
 from generate_map_config import Cell, Direction, Turn, CellType
+from ..utils.map_information_provider import CONFIG_FILE_LOCATION, MAP_IMAGE_FILE_SVG_SAVE_LOCATION, MAP_IMAGE_FILE_PNG_SAVE_LOCATION, MAP_LEGEND_FILE_SAVE_LOCATION
 
 HOME_DIR = os.environ['HOME']
-CATKIN_WORKSPACE = HOME_DIR + '/catkin_ws/'
-if os.environ.get('CATKIN_WORKSPACE'):
-    CATKIN_WORKSPACE = os.environ['CATKIN_WORKSPACE']
-CONFIG_FILE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/{}_configuration.npy'
-MAP_IMAGE_FILE_SVG_SAVE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/{}.svg'
-MAP_IMAGE_FILE_PNG_SAVE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/{}.png'
-MAP_LEGEND_FILE_SAVE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/legend.png'
 FONT_FAMILY_FILE = HOME_DIR + '/.local/lib/python2.7/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSerif.ttf'
 
 LEFT_ARROW = u"\u2190"
@@ -224,11 +218,7 @@ def createGridImage(data, colorDict, saveFig, imageFormat, showDirectionCount, s
             plt.savefig(MAP_IMAGE_FILE_SVG_SAVE_LOCATION, format=imageFormat, dpi=1200)
 
 
-def generateGridImage(mapName, saveFig=False, imageFormat='png', showDirectionCount=False, showTurnCount=False):
-    global CONFIG_FILE_LOCATION, MAP_IMAGE_FILE_PNG_SAVE_LOCATION, MAP_IMAGE_FILE_SVG_SAVE_LOCATION
-    CONFIG_FILE_LOCATION = CONFIG_FILE_LOCATION.format(mapName)
-    MAP_IMAGE_FILE_PNG_SAVE_LOCATION = MAP_IMAGE_FILE_PNG_SAVE_LOCATION.format(mapName)
-    MAP_IMAGE_FILE_SVG_SAVE_LOCATION = MAP_IMAGE_FILE_SVG_SAVE_LOCATION.format(mapName)
+def generateGridImage(saveFig=False, imageFormat='png', showDirectionCount=False, showTurnCount=False):
     try:
         mapConfiguration = np.load(CONFIG_FILE_LOCATION).item()
     except IOError:

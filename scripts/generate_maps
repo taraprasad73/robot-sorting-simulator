@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+rosrun sorting_robot generate_map_config
+rosrun sorting_robot generate_binary_map
+rosrun sorting_robot generate_networkx_graph
+rosrun sorting_robot generate_grid_image

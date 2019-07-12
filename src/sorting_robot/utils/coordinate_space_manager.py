@@ -2,14 +2,12 @@ import os
 import math
 import rospy
 import numpy as np
+from tf.transformations import euler_from_quaternion
+from geometry_msgs.msg import Pose
 from ..map_generation.generate_map_config import Cell, Direction
 from robot_info import RobotInfo
+from map_information_provider import CONFIG_FILE_LOCATION
 
-HOME_DIR = os.environ['HOME']
-CATKIN_WORKSPACE = HOME_DIR + '/catkin_ws/'
-if os.environ.get('CATKIN_WORKSPACE'):
-    CATKIN_WORKSPACE = os.environ['CATKIN_WORKSPACE']
-CONFIG_FILE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/{}_configuration.npy'
 
 '''
 percent of the cell length to be added at each boundary
@@ -37,14 +35,11 @@ def directionToRadians(direction):
 
 
 class CoordinateSpaceManager:
-    def __init__(self, mapName='map'):
-        global CONFIG_FILE_LOCATION
-        CONFIG_FILE_LOCATION = CONFIG_FILE_LOCATION.format(mapName)
+    def __init__(self):
         try:
             mapConfiguration = np.load(CONFIG_FILE_LOCATION).item()
         except IOError:
-            print(CONFIG_FILE_LOCATION +
-                  " doesn't exist. Run the following command to create it:\nrosrun sorting_robot generate_map_config");
+            rospy.logerror("{} doesn't exist. Run the following command to create it:\nrosrun sorting_robot generate_map_config".format(CONFIG_FILE_LOCATION))
             raise IOError("Config file doesn't exist.")
         else:
             self.numRowsInGrid = mapConfiguration['num_rows']
@@ -52,12 +47,24 @@ class CoordinateSpaceManager:
             self.cellLength = mapConfiguration['cell_length_in_meters']
             self.grid = mapConfiguration['grid']
 
+    def getPoseFromGridCoordinates(self, row, col, direction):
+        worldCoordinateValues = self.getWorldCoordinateWithDirection((row, col, direction))
+        pose = Pose()
+        pose.position.x = worldCoordinateValues[0]
+        pose.position.y = worldCoordinateValues[1]
+        pose.orientation.z = worldCoordinateValues[2]
+        return pose
+
+    # input: Pose() object
+    def convertPoseToState(self, pose):
+        theta = euler_from_quaternion([pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w])[2]
+        return self.convertPointToState((pose.position.x, pose.position.y, theta))
+
     # input: x, y, theta
     # theta is in radians, can correspond to any value between -180 and 180 degrees
     def convertPointToState(self, point):
         x, y, theta = point[0], point[1], point[2]
-        col = int(x // self.cellLength)
-        row = self.numRowsInGrid - int(y // self.cellLength) - 1
+        row, col = self.get_cell_containing_center((x, y))
 
         theta = math.degrees(theta) if(theta > 0) else math.degrees(theta) + 360
         # check cyclic cases properly
@@ -71,6 +78,14 @@ class CoordinateSpaceManager:
         elif 270 - ORIENTATION_TOLERANCE < theta < 270 + ORIENTATION_TOLERANCE:
             direction = 270
         return row, col, direction
+
+    # input: x, y
+    # output: returns the cell (row, col) which contains the center of the robot
+    def get_cell_containing_center(self, point):
+        x, y = point[0], point[1]
+        col = int(x // self.cellLength)
+        row = self.numRowsInGrid - int(y // self.cellLength) - 1
+        return row, col
 
     # the input point is the mid point of the robot in world coordinates
     def convertPointToCells(self, point):
@@ -130,7 +145,6 @@ class CoordinateSpaceManager:
         y = (r + 0.5) * self.cellLength
         RANGE_Y = self.numRowsInGrid * self.cellLength
         y = RANGE_Y - y
-
         return (x, y, theta)
 
     # returns the coordinates of the lower left corner of the cell in world coordinates

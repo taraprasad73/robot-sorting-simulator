@@ -14,7 +14,8 @@ def parseArgs():
     return not args.dont_save_fig
 
 if __name__ == '__main__':
+    saveFig = parseArgs()
     if os.environ.get('CIRCLECI'):
         generateNetworkxGraph(saveFig=False)
     else:
-        generateNetworkxGraph(saveFig=parseArgs())
+        generateNetworkxGraph(saveFig=saveFig)

@@ -181,6 +181,7 @@ install(PROGRAMS
   scripts/generate_networkx_graph
   scripts/spawn_robots_from_script
   scripts/generate_launch_files
+  scripts/generate_maps
   nodes/heatmap
   nodes/visualize_heatmap
   nodes/path_planner

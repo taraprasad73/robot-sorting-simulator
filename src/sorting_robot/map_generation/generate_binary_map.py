@@ -2,15 +2,7 @@ import os
 import numpy as np
 from PIL import Image
 from generate_map_config import Cell, CellType, Direction, Turn
-
-
-HOME_DIR = os.environ['HOME']
-CATKIN_WORKSPACE = HOME_DIR + '/catkin_ws/'
-if os.environ.get('CATKIN_WORKSPACE'):
-    CATKIN_WORKSPACE = os.environ['CATKIN_WORKSPACE']
-CONFIG_FILE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/{}_configuration.npy'
-BINARY_GRID_IMAGE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/{}_binary_grid.png'
-BINARY_GRID_IMAGE_LOCATION_STDR = CATKIN_WORKSPACE + '/src/sorting_robot/stdr_data/maps/{}_binary_grid.png'
+from ..utils.map_information_provider import CONFIG_FILE_LOCATION, BINARY_GRID_IMAGE_LOCATION, BINARY_GRID_IMAGE_LOCATION_STDR
 
 
 def saveDataToImage(data, filename):
@@ -23,11 +15,7 @@ def saveDataToImage(data, filename):
     im.save(filename, "PNG")
 
 
-def generateBinaryMap(mapName, pixelToCellRatio):
-    global CONFIG_FILE_LOCATION, BINARY_GRID_IMAGE_LOCATION, BINARY_GRID_IMAGE_LOCATION_STDR
-    CONFIG_FILE_LOCATION = CONFIG_FILE_LOCATION.format(mapName)
-    BINARY_GRID_IMAGE_LOCATION = BINARY_GRID_IMAGE_LOCATION.format(mapName)
-    BINARY_GRID_IMAGE_LOCATION_STDR = BINARY_GRID_IMAGE_LOCATION_STDR.format(mapName)
+def generateBinaryMap(pixelToCellRatio):
     try:
         mapConfiguration = np.load(CONFIG_FILE_LOCATION).item()
     except IOError:

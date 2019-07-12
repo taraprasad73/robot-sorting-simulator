@@ -1,2 +1,3 @@
 from coordinate_space_manager import CoordinateSpaceManager
+from map_information_provider import MapInformationProvider
 from robot_info import RobotInfo

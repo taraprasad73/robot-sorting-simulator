@@ -9,14 +9,13 @@ def parseArgs():
         description="parameters for spawning_robots_from_script")
     parser.add_argument('--all-at-once', default=False,
                         action='store_true', help="whether to spawn the robots one by one with delay between the calls")
-    parser.add_argument("--map-name", default='map', type=str, help="name of the map file")
     args = parser.parse_args()
-    return args.all_at_once, args.map_name
+    return args.all_at_once
 
 
 if __name__ == '__main__':
-    all_at_once, map_name = parseArgs()
+    all_at_once = parseArgs()
     if not all_at_once:
-        executeOneByOne(map_name)
+        executeOneByOne()
     else:
-        executeAllAtOnce(map_name)
+        executeAllAtOnce()

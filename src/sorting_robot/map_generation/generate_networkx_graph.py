@@ -7,15 +7,7 @@ if os.environ.get('CIRCLECI'):
 import matplotlib.pyplot as plt
 from matplotlib.patches import ArrowStyle
 from generate_map_config import Cell, Direction, Turn, CellType
-
-HOME_DIR = os.environ['HOME']
-CATKIN_WORKSPACE = HOME_DIR + '/catkin_ws/'
-if os.environ.get('CATKIN_WORKSPACE'):
-    CATKIN_WORKSPACE = os.environ['CATKIN_WORKSPACE']
-CONFIG_FILE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/map_configuration.npy'
-GRAPH_PICKLED_FILE_SAVE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/graph.gpickle'
-GRAPH_IMAGE_FILE_SAVE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/graph.svg'
-
+from ..utils.map_information_provider import CONFIG_FILE_LOCATION, GRAPH_PICKLED_FILE_LOCATION, GRAPH_IMAGE_FILE_LOCATION
 
 # Note that these weights are just placeholders, the actual weights change with heatmap
 TURN_COST = 50
@@ -122,7 +114,7 @@ def generateNetworkxGraph(saveFig=False):
         if saveFig:
             plt.axes().set_aspect('auto')
             nx.draw(G, pos=pos, node_size=0.005, width=0.25, arrowstyle=ArrowStyle.CurveB(head_length=.05, head_width=.05))
-            plt.savefig(GRAPH_IMAGE_FILE_SAVE_LOCATION, dpi=1200)
+            plt.savefig(GRAPH_IMAGE_FILE_LOCATION, dpi=1200)
 
 
 if __name__ == "__main__":

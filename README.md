@@ -95,13 +95,25 @@ Any launch file can be executed as rosrun sorting_robot name_of_launch_file [com
 
 ### Generate the maps
 -----
+Add these to .bashrc file. Replace **[map_name]** with the name of your map in the below lines.
 ~~~~
-rosrun sorting_robot generate_map_config (execute this first)
+export ROS_LOG_DIR=$HOME/catkin_ws/src/sorting_robot/logs
+export SORTING_ROBOT_MAP=[map_name]
+~~~~
+Create a [map_name]_params.ini file in data/map_params folder.
+~~~~
+rosrun sorting_robot generate_map_config
 rosrun sorting_robot generate_binary_map
 rosrun sorting_robot generate_networkx_graph
-rosrun sorting_robot generate_grid_image (optional)
+rosrun sorting_robot generate_grid_image
 ~~~~
-The output files will be generated in $HOME/catkin_ws/src/sorting_robot/data/ folder.
+
+Or as a shortcut, if not interested in changing the command-line args of the previous scripts, run all this in one go.
+~~~~
+rosrun sorting_robot generate_maps
+~~~~
+
+The output files will be generated in $HOME/catkin_ws/src/sorting_robot/data/[map_name] folder.
 
 ### Launch the entire sorting_robot system
 -----
@@ -110,20 +122,29 @@ Execute these commands in sequence.
 Terminal 0: roscore
 Terminal 1: roslaunch sorting_robot stdr_server_with_map_and_gui.launch
 Terminal 2: rosrun sorting_robot generate_spawn_locations [num_of_robots_to_spawn]
-Terminal 2: rosrun sorting_robot spawn_robots_from_script
-Terminal 3: roslaunch sorting_robot modules.launch
-Terminal 4: rosrun sorting_robot generate_launch_files
-Terminal 4: roslaunch sorting_robot controllers.launch
-Terminal 5: roslaunch sorting_robot bfsms.launch
+            rosrun sorting_robot spawn_robots_from_script
+Terminal 3: rosrun sorting_robot heatmap
+Terminal 4: rosrun sorting_robot path_planner
+Terminal 5: rosrun sorting_robot pickup_manager
+Terminal 6: rosrun sorting_robot generate_launch_files
+            roslaunch sorting_robot controllers.launch
+Terminal 7: roslaunch sorting_robot bfsms.launch
 ~~~~
-   
+
 ## Coding Standards
 -----
+### Naming Conventions
+ - Functions: lowercase words separated by underscores
+ - Class: Camelcase starting with uppercase
+ - Methods: lowercase words separated by underscores
+ - Variables: lowercase words separated by underscores
+ - Private Functions and Methods: Start with an underscore
+ - Constants (also in Enums): All uppercase words separated by underscores
+
 Use Visual Studio Code as the editor and pep8 as the linter for python and autopep8 for autoformatting.
 ### Linter used
- - **pep8** with E501, E703 and E402 disabled
+ - **pep8** with E501 and E402 disabled
  - **E501** - places a limit on the length of a line of code
- - **E703** - doesn't allow semicolon at the end of a statement
  - **E402** - forces module level import at top of file
 
 ### Setting pep8 in VSCode
@@ -134,10 +155,10 @@ Add the following lines to the settings.json found in File/Preferences/Settings.
     "python.linting.pylintEnabled": false,
     "python.linting.pep8Enabled": true,
     "python.linting.pep8Args": [
-        "--ignore=E501,E703,E402"
+        "--ignore=E501,E402"
     ],
     "python.formatting.autopep8Args": [
-        "--ignore=E501,E703,E402"
+        "--ignore=E501,E402"
     ],
 }
 ~~~~

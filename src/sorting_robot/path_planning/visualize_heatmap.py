@@ -1,4 +1,3 @@
-import os
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
@@ -7,15 +6,7 @@ import matplotlib.animation as animation
 import rospy
 from sorting_robot.msg import HeatMap
 from threading import Lock
-
-HOME_DIR = os.environ['HOME']
-CATKIN_WORKSPACE = HOME_DIR + '/catkin_ws/'
-if os.environ.get('CATKIN_WORKSPACE'):
-    CATKIN_WORKSPACE = os.environ['CATKIN_WORKSPACE']
-# if not os.path.exists(CATKIN_WORKSPACE + '/src/sorting_robot/data/heatmap'):
-#     os.makedirs(CATKIN_WORKSPACE + '/src/sorting_robot/data/heatmap')
-# HEATMAP_FILE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/heatmap/{:06d}.png'
-CONFIG_FILE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/{}_configuration.npy'
+from ..utils import MapInformationProvider
 
 
 def initHeatmap(data, ax=None,
@@ -156,6 +147,7 @@ def storeHeatData(data):
 
 def updatePlot(i, ax, im, title):
     heatDataLock.acquire()
+    global heatData
     if heatData is None:
         return
     im.set_data(heatData)
@@ -170,27 +162,19 @@ def handle_close(evt):
     rospy.signal_shutdown("matplotlib window was closed")
 
 
-def heatmapVisualizer(mapName):
-    global CONFIG_FILE_LOCATION
-    CONFIG_FILE_LOCATION = CONFIG_FILE_LOCATION.format(mapName)
-    try:
-        mapConfiguration = np.load(CONFIG_FILE_LOCATION).item();
-    except IOError:
-        print(CONFIG_FILE_LOCATION +
-              " doesn't exist. Run the following command to create it:\nrosrun sorting_robot generate_map_config");
-    else:
-        global heatData
-        heatData = np.zeros((mapConfiguration['num_rows'], mapConfiguration['num_columns']))
-        rospy.init_node('heatmap_visualizer', anonymous=True)
-        rospy.Subscriber('heat_map', HeatMap, storeHeatData)
-        fig, ax = plt.subplots()
-        im, title = initHeatmap(data=heatData, ax=ax, cmap='Wistia', cbarlabel="heat value")
-        heatmapAnimation = FuncAnimation(fig, updatePlot, fargs=(ax, im, title), interval=500, repeat=True, blit=False)
-        fig.canvas.mpl_connect('close_event', handle_close)
-        plt.show()
+def heatmapVisualizer():
+    mip = MapInformationProvider()
+    heatData = np.zeros((mip.numRowsInGrid, mip.numColumnsInGrid))
+    rospy.init_node('heatmap_visualizer', anonymous=True)
+    rospy.Subscriber('heat_map', HeatMap, storeHeatData)
+    fig, ax = plt.subplots()
+    im, title = initHeatmap(data=heatData, ax=ax, cmap='Wistia', cbarlabel="heat value")
+    heatmapAnimation = FuncAnimation(fig, updatePlot, fargs=(ax, im, title), interval=500, repeat=True, blit=False)
+    fig.canvas.mpl_connect('close_event', handle_close)
+    plt.show()
 
-        while not rospy.is_shutdown():
-            rospy.spin()
+    while not rospy.is_shutdown():
+        rospy.spin()
 
 
 if __name__ == '__main__':

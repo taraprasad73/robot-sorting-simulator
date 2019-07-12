@@ -5,7 +5,7 @@ HOME_DIR = os.environ['HOME']
 CATKIN_WORKSPACE = HOME_DIR + '/catkin_ws/'
 if os.environ.get('CATKIN_WORKSPACE'):
     CATKIN_WORKSPACE = os.environ['CATKIN_WORKSPACE']
-ROBOT_CONFIGURATION_FILE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/stdr_data/robots/pandora_robot.yaml'
+ROBOT_CONFIGURATION_FILE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/stdr_data/robots/pandora_robot.yaml'
 
 
 class RobotInfo:
