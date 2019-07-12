@@ -42,19 +42,19 @@ class RobotState(Enum):
 
 
 class BFSM:
-    def __init__(self, name):
-        self.node_name = name + '_bfsm'
+    def __init__(self, robot_name):
+        self.node_name = robot_name + '_bfsm'
         rospy.init_node(self.node_name, anonymous=False, log_level=rospy.INFO)
         self.state = RobotState.SELECT_PICKUP
-        self.name = name
+        self.name = robot_name
         self.pose = State()
         self.pickup_location = State()
         self.bin_location = State()
         self.pickup_id = None
         self.ready = False
         self.csm = CoordinateSpaceManager()
-        self.sequencer = Sequencer(name)
-        self.pose_subscriber = rospy.Subscriber('/' + name + '/odom', Odometry, self.odom_callback)
+        self.sequencer = Sequencer(robot_name)
+        self.pose_subscriber = rospy.Subscriber('/' + robot_name + '/odom', Odometry, self.odom_callback)
         self.path_service = rospy.ServiceProxy('/path', Path)
         self.bin_service = rospy.ServiceProxy('/path_to_bin', PathToBin)
         self.pickup_service = rospy.ServiceProxy('/pickup_location', GetPickup)

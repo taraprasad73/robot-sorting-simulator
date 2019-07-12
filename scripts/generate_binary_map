@@ -7,11 +7,11 @@ import argparse
 def parseArgs():
     parser = argparse.ArgumentParser(
         description="parameters for generating binary map")
-    parser.add_argument("--map-name", default='map', type=str, help="name of the map file")
     parser.add_argument("-r", default=50, type=int, help="pixel to cell ratio")
     args = parser.parse_args()
-    return args.map_name, args.r
+    return args.r
 
 
 if __name__ == '__main__':
-    generateBinaryMap(*parseArgs())
+    pixelToCellRatio = parseArgs()
+    generateBinaryMap(pixelToCellRatio=pixelToCellRatio)

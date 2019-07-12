@@ -12,9 +12,17 @@ if os.environ.get('CATKIN_WORKSPACE'):
     CATKIN_WORKSPACE = os.environ['CATKIN_WORKSPACE']
 if not os.path.exists(CATKIN_WORKSPACE + '/src/sorting_robot/data'):
     os.makedirs(CATKIN_WORKSPACE + '/src/sorting_robot/data')
-
-CONFIG_PARSER_FILE = CATKIN_WORKSPACE + '/src/sorting_robot/data/{}_params.ini'
-CONFIG_FILE_SAVE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/{}_configuration.npy'
+if not os.environ.get('SORTING_ROBOT_MAP'):
+    logging.error('SORTING_ROBOT_MAP environment variable is not set.')
+    exit(1)
+MAP_NAME = os.environ['SORTING_ROBOT_MAP']
+CONFIG_PARSER_FILE = CATKIN_WORKSPACE + '/src/sorting_robot/data/map_params/{}_params.ini'.format(MAP_NAME)
+if not os.path.exists(CONFIG_PARSER_FILE):
+    logging.error("{} doesn't exist in data/map_params/ folder.".format(CONFIG_PARSER_FILE))
+    exit(1)
+if not os.path.exists(CATKIN_WORKSPACE + '/src/sorting_robot/data/{}'.format(MAP_NAME)):
+    os.makedirs(CATKIN_WORKSPACE + '/src/sorting_robot/data/{}'.format(MAP_NAME))
+CONFIG_FILE_SAVE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/{}/{}_configuration.npy'.format(MAP_NAME, MAP_NAME)
 
 
 class CellType(Enum):
@@ -450,16 +458,15 @@ def assignProhibitedTypes():
 
 def parseArgs():
     parser = argparse.ArgumentParser(description="parameters of the bin area")
-    parser.add_argument("--map-name", default='map', type=str, help="name of the map file")
     parser.add_argument('--is-not-symmetric', default=False,
                         action='store_true', help="whether to keep the grid symmetric or not (experimental)")
     args = parser.parse_args()
-    return args.map_name, args.is_not_symmetric
+    return args.is_not_symmetric
 
 
-def parseConfigFile(mapName):
+def parseConfigFile():
     config = ConfigParser.RawConfigParser()
-    config.read(CONFIG_PARSER_FILE.format(mapName))
+    config.read(CONFIG_PARSER_FILE)
     k = config.getint('center_grid', 'number_of_blocks')
     m = config.getint('center_grid', 'number_of_rows_in_a_block')
     n = config.getint('center_grid', 'number_of_columns_in_a_block')
@@ -473,14 +480,12 @@ def parseConfigFile(mapName):
 
 
 def generateMapConfig():
-    mapName, isNotSymmetric = parseArgs()
+    isNotSymmetric = parseArgs()
     if isNotSymmetric:
-        print("Experimental. Not fully implemented yet!")
+        logging.error("Experimental. Not fully implemented yet!")
         exit(1)
 
-    global CONFIG_FILE_SAVE_LOCATION
-    CONFIG_FILE_SAVE_LOCATION = CONFIG_FILE_SAVE_LOCATION.format(mapName)
-    cell_length, k, m, n, p, q, pickupRows, pickupColumns, chargingRows = parseConfigFile(mapName)
+    cell_length, k, m, n, p, q, pickupRows, pickupColumns, chargingRows = parseConfigFile()
     checkValidity(k, m, n, p, q, pickupRows, pickupColumns, chargingRows, isNotSymmetric)
 
     # convert to 0 indexing

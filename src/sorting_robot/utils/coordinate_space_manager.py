@@ -6,12 +6,8 @@ from tf.transformations import euler_from_quaternion
 from geometry_msgs.msg import Pose
 from ..map_generation.generate_map_config import Cell, Direction
 from robot_info import RobotInfo
+from map_information_provider import CONFIG_FILE_LOCATION
 
-HOME_DIR = os.environ['HOME']
-CATKIN_WORKSPACE = HOME_DIR + '/catkin_ws/'
-if os.environ.get('CATKIN_WORKSPACE'):
-    CATKIN_WORKSPACE = os.environ['CATKIN_WORKSPACE']
-CONFIG_FILE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/{}_configuration.npy'
 
 '''
 percent of the cell length to be added at each boundary
@@ -39,9 +35,7 @@ def directionToRadians(direction):
 
 
 class CoordinateSpaceManager:
-    def __init__(self, mapName='map'):
-        global CONFIG_FILE_LOCATION
-        CONFIG_FILE_LOCATION = CONFIG_FILE_LOCATION.format(mapName)
+    def __init__(self):
         try:
             mapConfiguration = np.load(CONFIG_FILE_LOCATION).item()
         except IOError:

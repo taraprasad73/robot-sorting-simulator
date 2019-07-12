@@ -54,9 +54,9 @@ class RobotState(Enum):
 
 
 class Controller:
-    def __init__(self, robotName):
+    def __init__(self, robot_name):
         # create node
-        self.node_name = robotName + '_controller'
+        self.node_name = robot_name + '_controller'
         rospy.init_node(self.node_name, anonymous=False, log_level=rospy.INFO)
 
         # robot's info
@@ -71,7 +71,7 @@ class Controller:
         self.velocity = Twist()
         self.robotHeading = 0
         self.reached_count = 0
-        self.robotName = robotName
+        self.robotName = robot_name
         self.robotState = RobotState.IDLE
 
         # utilities classes
@@ -84,18 +84,18 @@ class Controller:
         self.occupancyMapLock = threading.Lock()
 
         # subscribe to the odom to get the position of the robot
-        # TODO add lock variables needed
-        self.pose_subscriber = rospy.Subscriber('/' + robotName + '/odom', Odometry, self.odom_callback)
+        # TODO add lock variables if needed
+        self.pose_subscriber = rospy.Subscriber('/' + robot_name + '/odom', Odometry, self.odom_callback)
 
         # provide a service to receive goal from controller
         # TODO add lock variables if needed
-        self.goal_service = rospy.Service('/' + robotName + '/subgoal', GoalService, self.receive_goal)
+        self.goal_service = rospy.Service('/' + robot_name + '/subgoal', GoalService, self.receive_goal)
 
         # consume reached_subgoal service to provide acknowledgement
-        self.reached_service = rospy.ServiceProxy('/' + robotName + '/reached_subgoal', ReachedService)
+        self.reached_service = rospy.ServiceProxy('/' + robot_name + '/reached_subgoal', ReachedService)
 
         # publish the velocity of the robot to cmd_vel topic
-        self.velocityPublisher = rospy.Publisher('/' + robotName + '/cmd_vel', Twist, queue_size=10)
+        self.velocityPublisher = rospy.Publisher('/' + robot_name + '/cmd_vel', Twist, queue_size=10)
         self.velocityPublishRate = rospy.Rate(VELOCITY_PUBLISH_FREQUENCY)
 
     def occupancy_callback(self, data):

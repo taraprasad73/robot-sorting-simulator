@@ -8,7 +8,7 @@ def parseArgs():
     parser = argparse.ArgumentParser(
         description="parameters for the traffic manager")
     parser.add_argument("k", type=int, help="value of k")
-    args,unknown = parser.parse_known_args()
+    args, unknown = parser.parse_known_args()
     return args.k
 
 

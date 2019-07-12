@@ -2,11 +2,8 @@ import os
 import re
 import xmltodict
 import rospy
+from ..utils.map_information_provider import CATKIN_WORKSPACE
 
-HOME_DIR = os.environ['HOME']
-CATKIN_WORKSPACE = HOME_DIR + '/catkin_ws/'
-if os.environ.get('CATKIN_WORKSPACE'):
-    CATKIN_WORKSPACE = os.environ['CATKIN_WORKSPACE']
 CONTROLLERS_LAUNCH_FILE = CATKIN_WORKSPACE + '/src/sorting_robot/launch/controllers.launch'
 BFSMS_LAUNCH_FILE = CATKIN_WORKSPACE + '/src/sorting_robot/launch/bfsms.launch'
 
@@ -15,7 +12,7 @@ def get_available_robots():
     newRobots = set()
     topics = rospy.get_published_topics()
     for topic in topics:
-        topic_name, topic_type = topic;
+        topic_name, topic_type = topic
         match = re.search("/.*/odom", topic_name)
         if(match):
             check = re.search("/.*/", topic_name)

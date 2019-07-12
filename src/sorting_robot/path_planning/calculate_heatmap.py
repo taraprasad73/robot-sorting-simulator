@@ -1,34 +1,30 @@
 import argparse
 import rospy
 import re
-import os
 import logging
 import threading
+import datetime
 import numpy as np
 from geometry_msgs.msg import Pose
 from nav_msgs.msg import Odometry
 from sorting_robot.msg import HeatMap, OccupancyMap
-from ..utils import CoordinateSpaceManager, RobotInfo
+from ..utils import CoordinateSpaceManager, MapInformationProvider, RobotInfo
 
-HOME_DIR = os.environ['HOME']
-CATKIN_WORKSPACE = HOME_DIR + '/catkin_ws/'
-if os.environ.get('CATKIN_WORKSPACE'):
-    CATKIN_WORKSPACE = os.environ['CATKIN_WORKSPACE']
-CONFIG_FILE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/{}_configuration.npy'
-
-HEATMAP_PUBLISH_RATE = 50
+HEATMAP_PUBLISH_RATE = 10
 TOPIC_SEARCH_INTERVAL = 0.5
-ETA = 0.3  # per second
+# TODO heatmap evaporates rapidly, needs fix
+ETA = 0.9999999  # per second
 
 
 class Heatmap:
-    def __init__(self, mapName, numRows, numColumns):
+    def __init__(self, numRows, numColumns):
         rospy.init_node('heatmap', anonymous=False, log_level=rospy.INFO)
-        self.csm = CoordinateSpaceManager(mapName)
+        self.csm = CoordinateSpaceManager()
         self.gridShape = (numRows, numColumns)
         self.heatmapPublisher = rospy.Publisher('/heat_map', HeatMap, queue_size=10)
-        self.occupancyPublisher = rospy.Publisher('/occupancy_map', OccupancyMap, queue_size=10)
+        self.occupancyPublisher = rospy.Publisher('/occupancy_map', OccupancyMap, queue_size=HEATMAP_PUBLISH_RATE)
         self.activeRobots = {}
+        self.lastHeatmapCalaculatedTime = datetime.datetime.now()
         self.previousMap = np.zeros((numRows, numColumns))
         rospy.Timer(rospy.Duration(TOPIC_SEARCH_INTERVAL), self.findTopics)
         self.activeRobotsLock = threading.Lock()
@@ -82,7 +78,11 @@ class Heatmap:
             for (r, c) in cells:
                 new_map[r][c] = 1
             occupancyMap[firstOccupiedCell] = True
-        final_map = self.eta * self.previousMap + new_map
+        currentTime = datetime.datetime.now()
+        timeDifference = currentTime - self.lastHeatmapCalaculatedTime
+        self.lastHeatmapCalaculatedTime = currentTime
+        deltaTime = timeDifference.total_seconds()  # time in seconds
+        final_map = ETA * deltaTime * self.previousMap + new_map
         self.previousMap = final_map
         return occupancyMap, final_map
 
@@ -98,17 +98,11 @@ class Heatmap:
             rate.sleep()
 
 
-def calculateHeatmap(mapName):
-    global CONFIG_FILE_LOCATION
-    CONFIG_FILE_LOCATION = CONFIG_FILE_LOCATION.format(mapName)
-    try:
-        mapConfiguration = np.load(CONFIG_FILE_LOCATION).item()
-    except IOError:
-        rospy.logerror("{} doesn't exist. Run the following command to create it:\nrosrun sorting_robot generate_map_config".format(CONFIG_FILE_LOCATION))
-    else:
-        heatmap = Heatmap(mapName, mapConfiguration['num_rows'], mapConfiguration['num_columns'])
-        rospy.loginfo('Heatmap node is running...')
-        heatmap.run()
+def calculateHeatmap():
+    mip = MapInformationProvider()
+    heatmap = Heatmap(mip.numRowsInGrid, mip.numColumnsInGrid)
+    rospy.loginfo('Heatmap node is running...')
+    heatmap.run()
 
 
 if __name__ == "__main__":

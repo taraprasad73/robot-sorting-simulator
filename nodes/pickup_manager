@@ -1,8 +1,9 @@
 #!/usr/bin/env python
-import rospy;
-from sorting_robot.bfsm import PickupManager;
+import rospy
+from sorting_robot.bfsm import PickupManager
 
-if __name__=="__main__":
-	manager = PickupManager();
-	rospy.spin();
-	manager.close();
+
+if __name__ == "__main__":
+    manager = PickupManager()
+    rospy.spin()
+    manager.close()

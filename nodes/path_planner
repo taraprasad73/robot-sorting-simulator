@@ -2,5 +2,6 @@
 
 from sorting_robot.path_planning import pathPlanner
 
+
 if __name__ == '__main__':
     pathPlanner()

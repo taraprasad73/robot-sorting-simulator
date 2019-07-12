@@ -10,38 +10,11 @@ from threading import Lock
 from sorting_robot.msg import State, HeatMap
 from sorting_robot.srv import Path, PathToBin, PathResponse, PathToBinResponse
 from ..utils import RobotInfo
+from ..utils.map_information_provider import GRAPH_PICKLED_FILE_LOCATION
 
-HOME_DIR = os.environ['HOME']
-CATKIN_WORKSPACE = HOME_DIR + '/catkin_ws/'
-if os.environ.get('CATKIN_WORKSPACE'):
-    CATKIN_WORKSPACE = os.environ['CATKIN_WORKSPACE']
-# CONFIG_FILE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/map_configuration.npy'
-ANNOTATED_GRAPH_IMAGE_FILE_SAVE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/annotated_graph.svg'
-GRAPH_PICKLED_FILE_LOCATION = CATKIN_WORKSPACE + '/src/sorting_robot/data/graph.gpickle'
 
 TURN_PENALTY = 1.2
 HEATMAP_PENALTY = 1
-
-
-'''
-def drawPath(self, nodesInPath):
-    edgelist = [(nodesInPath[i], nodesInPath[i + 1]) for i in range(len(nodesInPath) - 1)]
-    CELL_LENGTH = 200
-    pos = {}
-    for node in G.nodes():
-        center = (node[1] * 3 * CELL_LENGTH, -node[0] * 3 * CELL_LENGTH)
-        if node[2] == 0:
-            pos[node] = (center[0] + CELL_LENGTH, center[1])
-        elif node[2] == 90:
-            pos[node] = (center[0], center[1] + CELL_LENGTH)
-        elif node[2] == 180:
-            pos[node] = (center[0] - CELL_LENGTH, center[1])
-        elif node[2] == 270:
-            pos[node] = (center[0], center[1] - CELL_LENGTH)
-    nx.draw(G, pos=pos, arrowsize=2, node_size=0.1, edgecolor='green')
-    nx.draw_networkx_edges(G, pos=pos, edgelist=edgelist, arrowsize=6, color='red')
-    plt.savefig(ANNOTATED_GRAPH_IMAGE_FILE_SAVE_LOCATION, dpi=1200)
-'''
 
 
 def updateWeights(data):

@@ -1,16 +1,7 @@
 #!/usr/bin/env python
 
-import argparse
 from sorting_robot.path_planning import heatmapVisualizer
 
 
-def parseArgs():
-    parser = argparse.ArgumentParser(
-        description="parameters for generating binary map")
-    parser.add_argument("--map-name", default='map', type=str, help="name of the map file")
-    args = parser.parse_args()
-    return args.map_name
-
-
 if __name__ == '__main__':
-    heatmapVisualizer(parseArgs())
+    heatmapVisualizer()

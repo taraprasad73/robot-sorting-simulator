@@ -95,7 +95,12 @@ Any launch file can be executed as rosrun sorting_robot name_of_launch_file [com
 
 ### Generate the maps
 -----
-For the large map with default values.
+Add these to .bashrc file. Replace **[map_name]** with the name of your map in the below lines.
+~~~~
+export ROS_LOG_DIR=$HOME/catkin_ws/src/sorting_robot/logs
+export SORTING_ROBOT_MAP=[map_name]
+~~~~
+Create a [map_name]_params.ini file in data/map_params folder.
 ~~~~
 rosrun sorting_robot generate_map_config
 rosrun sorting_robot generate_binary_map
@@ -103,17 +108,12 @@ rosrun sorting_robot generate_networkx_graph
 rosrun sorting_robot generate_grid_image
 ~~~~
 
-For the default small map template.
+Or as a shortcut, if not interested in changing the command-line args of the previous scripts, run all this in one go.
 ~~~~
-rosrun sorting_robot generate_map_config --map-name small_map
-rosrun sorting_robot generate_binary_map --map-name small_map
-rosrun sorting_robot generate_networkx_graph --map-name small_map
-rosrun sorting_robot generate_grid_image --map-name small_map
+rosrun sorting_robot generate_maps
 ~~~~
 
-For modifying the parameters copy the map_params.ini into a file [map_name]_params.ini and modify it. Pass the map_name
-argument into argparse as shown in the small_map example above. 
-The output files will be generated in $HOME/catkin_ws/src/sorting_robot/data/ folder.
+The output files will be generated in $HOME/catkin_ws/src/sorting_robot/data/[map_name] folder.
 
 ### Launch the entire sorting_robot system
 -----
@@ -122,11 +122,13 @@ Execute these commands in sequence.
 Terminal 0: roscore
 Terminal 1: roslaunch sorting_robot stdr_server_with_map_and_gui.launch
 Terminal 2: rosrun sorting_robot generate_spawn_locations [num_of_robots_to_spawn]
-Terminal 2: rosrun sorting_robot spawn_robots_from_script
-Terminal 3: roslaunch sorting_robot modules.launch
-Terminal 4: rosrun sorting_robot generate_launch_files
-Terminal 4: roslaunch sorting_robot controllers.launch
-Terminal 5: roslaunch sorting_robot bfsms.launch
+            rosrun sorting_robot spawn_robots_from_script
+Terminal 3: rosrun sorting_robot heatmap
+Terminal 4: rosrun sorting_robot path_planner
+Terminal 5: rosrun sorting_robot pickup_manager
+Terminal 6: rosrun sorting_robot generate_launch_files
+            roslaunch sorting_robot controllers.launch
+Terminal 7: roslaunch sorting_robot bfsms.launch
 ~~~~
 
 ## Coding Standards
