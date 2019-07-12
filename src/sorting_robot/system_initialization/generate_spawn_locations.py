@@ -34,8 +34,7 @@ def generateSpawnLocations(numberOfLocations):
         grid = mapConfiguration['grid']
         cells = [(r, c) for r in range(grid.shape[0])
                  for c in range(grid.shape[1])]
-        # freeCells = getRandomFreePoints(numberOfLocations, cells, grid)
-        freeCells = [(9, 3), (11, 3)]
+        freeCells = getRandomFreePoints(numberOfLocations, cells, grid)
         csm = CoordinateSpaceManager()
         points = []
         for cell in freeCells:

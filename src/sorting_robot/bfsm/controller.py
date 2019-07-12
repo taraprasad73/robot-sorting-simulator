@@ -36,11 +36,12 @@ Some of the terms used are explained below:
 WARNING: Using debug mode for log level will consume large amount of disk space.
 '''
 
-MAX_LINEAR_VELOCITY = 2  # in m/s
-GOAL_REACHED_TOLERANCE = 0.001  # in m
-ANGLE_REACHED_TOLERANCE = 0.001  # in radians
-LINEAR_VELOCITY_MULTIPLIER = 0.5
-ANGULAR_VELOCITY_MULTIPLIER = 0.5
+MAX_LINEAR_VELOCITY = 1.4  # in m/s
+GOAL_REACHED_TOLERANCE = 0.01  # in m
+ANGLE_REACHED_TOLERANCE = 0.01  # in radians
+ANGLE_CORRECTION_TOLERANCE = 0.01  # in radians
+LINEAR_VELOCITY_MULTIPLIER = 2
+ANGULAR_VELOCITY_MULTIPLIER = 1
 VELOCITY_PUBLISH_FREQUENCY = 50
 NUMBER_OF_CELLS_TO_SCAN = 20
 
@@ -270,7 +271,7 @@ class Controller:
                            self.currentPosition.position.x, self.currentPosition.position.y,
                            self.robotHeading, self.currentGoal.position.x, self.currentGoal.position.y,
                            self.currentGoal.orientation.z, angleToTurn))
-        if(abs(angleToTurn) >= ANGLE_REACHED_TOLERANCE):
+        if(abs(angleToTurn) >= ANGLE_CORRECTION_TOLERANCE):
             self.velocity.angular.z = ANGULAR_VELOCITY_MULTIPLIER * angleToTurn
             self.velocity.linear.x = 0
         else:
