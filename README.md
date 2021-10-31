@@ -1,5 +1,9 @@
 # Sorting Robot
 
+## Simulator in action
+![Screenshot from 2021-10-31 12-02-58](https://user-images.githubusercontent.com/10519897/139571234-423cc52a-3bd7-4b1d-9709-d1d844caf370.png)
+
+
 ## Installation and setting up the environment
 -----
  - Setup ROS Kinetic and catkin workspace.
