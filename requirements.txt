@@ -4,7 +4,7 @@ cycler==0.10.0
 enum34==1.1.6
 kiwisolver==1.0.1
 matplotlib==2.2.4
-numpy==1.16.2
+numpy==1.22.0
 pep8==1.7.1
 Pillow==10.0.1
 pycodestyle==2.5.0
